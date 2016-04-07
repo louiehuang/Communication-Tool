@@ -1,0 +1,8 @@
+E:\DataBase\ProjectChat\testReg\testReg\bin\Debug\testReg.exe
+E:\DataBase\ProjectChat\testReg\testReg\bin\Debug\testReg.pdb
+E:\DataBase\ProjectChat\testReg\testReg\obj\x86\Debug\testReg.Form1.resources
+E:\DataBase\ProjectChat\testReg\testReg\obj\x86\Debug\testReg.Properties.Resources.resources
+E:\DataBase\ProjectChat\testReg\testReg\obj\x86\Debug\testReg.csproj.GenerateResource.Cache
+E:\DataBase\ProjectChat\testReg\testReg\obj\x86\Debug\testReg.exe
+E:\DataBase\ProjectChat\testReg\testReg\obj\x86\Debug\testReg.pdb
+E:\DataBase\ProjectChat\testReg\testReg\obj\x86\Debug\testReg.csprojResolveAssemblyReference.cache

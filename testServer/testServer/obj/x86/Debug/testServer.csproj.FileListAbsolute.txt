@@ -1,0 +1,8 @@
+E:\DataBase\ProjectChat\testServer\testServer\obj\x86\Debug\testServer.Form1.resources
+E:\DataBase\ProjectChat\testServer\testServer\obj\x86\Debug\testServer.Properties.Resources.resources
+E:\DataBase\ProjectChat\testServer\testServer\obj\x86\Debug\testServer.csproj.GenerateResource.Cache
+E:\DataBase\ProjectChat\testServer\testServer\bin\Debug\testServer.exe
+E:\DataBase\ProjectChat\testServer\testServer\bin\Debug\testServer.pdb
+E:\DataBase\ProjectChat\testServer\testServer\obj\x86\Debug\testServer.exe
+E:\DataBase\ProjectChat\testServer\testServer\obj\x86\Debug\testServer.pdb
+E:\DataBase\ProjectChat\testServer\testServer\obj\x86\Debug\testServer.csprojResolveAssemblyReference.cache
