@@ -30,9 +30,14 @@ namespace testServer
 
         public static ManualResetEvent allDone = new ManualResetEvent(false);
 
+        /// <summary>
+        /// 开始监听客户端请求
+        /// </summary>
+        /// <param name="sender"></param>
+        /// <param name="e"></param>
         private void button1_Click(object sender, EventArgs e)
         {
-            myListener = new TcpListener(EndPoint);
+            myListener = new TcpListener(EndPoint); 
             myListener.Start();
 
             isend = false;
@@ -45,7 +50,7 @@ namespace testServer
 
         private void Form1_Load(object sender, EventArgs e)
         {
-            //myThread = new Thread(new ThreadStart(StartListen));
+
         }
 
         public void StartListen()
@@ -54,11 +59,16 @@ namespace testServer
             while (true && !isend)
             {
                 allDone.Set();
-                MyUser client = new MyUser(myListener.AcceptTcpClient());////////////
+                ProcessUserRequest client = new ProcessUserRequest(myListener.AcceptTcpClient());
                 allDone.WaitOne();
             }
         }
 
+        /// <summary>
+        /// 停止监听
+        /// </summary>
+        /// <param name="sender"></param>
+        /// <param name="e"></param>
         private void button2_Click(object sender, EventArgs e)
         {
             myListener.Stop();
@@ -67,26 +77,19 @@ namespace testServer
             button2.Enabled = false;
         }
 
+        /// <summary>
+        /// 关闭窗体时停止监听，退出应用
+        /// </summary>
+        /// <param name="sender"></param>
+        /// <param name="e"></param>
         private void Form1_FormClosing(object sender, FormClosingEventArgs e)
         {
             if (myListener != null)
             {
-                button1.PerformClick();
+                button2.PerformClick();
             }
             Application.Exit();
         }
 
-        private void button3_Click(object sender, EventArgs e)
-        {
-            mydb test = new mydb();
-            if (test.Sqltest())
-            {
-                MessageBox.Show("数据库连接成功！");
-            }
-            else
-            {
-                MessageBox.Show("连接失败！");
-            }
-        }
     }
 }

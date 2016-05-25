@@ -38,7 +38,7 @@ namespace testClient
         byte[] buffer; //缓存接收到和要发送的信息
         int size = 8192;
 
-        private HandleMsg MsgHandle;//处理收到的字符
+        private SplitMsg MsgHandle;//处理收到的字符
         public delegate void updataMain(string msg);
         public Hashtable UserMsg = new Hashtable();
 
@@ -67,7 +67,7 @@ namespace testClient
         /// <param name="e"></param>
         private void FormMain_Load(object sender, EventArgs e)
         {
-            MsgHandle = new HandleMsg();
+            MsgHandle = new SplitMsg();
         }
 
         private void sideBar1_MouseDown(object sender, MouseEventArgs e)
@@ -174,6 +174,8 @@ namespace testClient
                     string Readmsg = Encoding.Unicode.GetString(buffer, 0, readbytes);
                     Array.Clear(buffer, 0, buffer.Length);//清空缓存
 
+                    //MessageBox.Show("client: \n" + Readmsg);
+
                     /*处理所得的Readmsg*/
 
                     if (Readmsg.StartsWith("[off]"))
@@ -262,13 +264,31 @@ namespace testClient
                             foreach (string msg in AllMsg)
                             {
                                 //MessageBox.Show(msg);
-                                if (msg.StartsWith("[welcome]"))//登陆成功
+                                if (msg.StartsWith("[login_successful]"))//登陆成功
                                 {
-                                    //[welcome]<all><MySimple><qqnum10151100 name="Shane" img="1" sign="no"><qqnum10151100></MySimple>
-                                    //<friends><qqnum25384137 name="Bryan" img="2" ison="yes"></qqnum25384137></friend></all>
-                                    string temp = msg.Substring(9);
+                                    /*[login_successful]
+                                      * <Info>
+                                      *          <myInfo>
+                                      *                  <qqnum101511 name="Shane" img="19" sign="西城主唱"></qqnum101511>
+                                      *          </myInfo>
+                                      *          <friends>
+                                      *                  <frienditem account="253841" name="Bryan" img="1"></frienditem>
+                                      *                  <frienditem account="100001" name="Alice" img="2"></frienditem>
+                                      *          </friend>
+                                      *          <groups>
+                                      *                  <groupitem num="000001" name="DataBase" header="1"></groupitem>
+                                      *                  <groupitem num="000002" name="C#" header="2"></groupitem>
+                                      *          </groups>
+                                      * </Info>
+                                   */
+
+                                    string temp = msg.Substring(18);
                                     /*更新窗体，载入好友列表**/
                                     this.Invoke(new updataMain(myupdate), new object[] { temp });
+                                }
+                                else if (msg.StartsWith("login_failed")) //登陆失败
+                                {
+                                    
                                 }
                                 else if (msg.StartsWith("[talk]")) //会话请求
                                 {
@@ -397,7 +417,7 @@ namespace testClient
             {
                 if (groupchats.Key.ToString() == groupid)//有该窗体存在
                 {
-                    MessageBox.Show("processGroupMsg");
+                    //MessageBox.Show("processGroupMsg");
                     groupchatformisopen = true;
                     //更新聊天窗口中消息信息
                     ((GroupChat)groupchats.Value).BeginInvoke(new UpdateChat(((GroupChat)groupchats.Value).updatemsg), new object[] { msgbyte });
@@ -457,7 +477,9 @@ namespace testClient
                 //[msg]000001,Programming,2,Shane 12:44:50:\nhello\nAlice 12:45:23:\nHi\n
                 //获取群组的所有用户
                 GroupChat groupchat = new GroupChat(this.pictureBox1.Tag.ToString(), alltemp[0], label1.Text, alltemp[1], int.Parse(alltemp[2]));
-
+                groupchat.Show();
+                groupchat.BeginInvoke(new UpdateChat(groupchat.updatemsg), new object[] { mymsg });
+                
 
             }
 
@@ -663,78 +685,70 @@ namespace testClient
              */
 
             /*
-             * <all>
-             *          <MySimple>
-             *                  <qqnum101511 name="Shane" img="19" sign="签名测试"></qqnum101511>
-             *          </MySimple>
+             * <Info>
+             *          <myInfo>
+             *                  <me account="101511" name="Shane" header="19" signature="西城主唱"></me>
+             *          </myInfo>
              *          <friends>
-             *                  <qqnum253841 name="Bryan" img="1" ison=0></qqnum253841>
-             *                  <qqnum100002 name="测试用户" img="4" ison="yes"></qqnum100002>
+             *                  <frienditem account="253841" name="Bryan" header="1"></frienditem>
+             *                  <frienditem account="100001" name="Alice" header="2"></frienditem>
              *          </friend>
              *          <groups>
              *                  <groupitem num="000001" name="DataBase" header="1"></groupitem>
              *                  <groupitem num="000002" name="C#" header="2"></groupitem>
              *          </groups>
-             * </all>
+             * </Info>
              */
 
             XmlDocument doc = new XmlDocument();
             doc.LoadXml(msg);
 
-            //遍历根节点<all></all>的所有子节点
-            XmlNodeList xmlnodeList = doc.SelectSingleNode("all").ChildNodes;
+            //遍历根节点<Info></Info>的所有子节点
+            XmlNodeList xmlnodeList = doc.SelectSingleNode("Info").ChildNodes;
             foreach (XmlNode SuperirNode in xmlnodeList)
             {
-                /*该账号自己的资料(昵称，账号，签名，头像)*/
-                if (SuperirNode.Name == "MySimple")
+                if (SuperirNode.Name == "myInfo") //个人信息
                 {
                     foreach (XmlNode child in SuperirNode.ChildNodes)
                     {
+                        string myaccount = child.Attributes["account"].Value;
                         label1.Text = child.Attributes["name"].Value; //获取自己的昵称
-                        int imageindex = int.Parse(child.Attributes["img"].Value); //获取自己的头像索引
-                        label2.Text = child.Attributes["sign"].Value; //获取自己的签名
+                        int imageindex = int.Parse(child.Attributes["header"].Value); //获取自己的头像索引
+                        label2.Text = child.Attributes["signature"].Value; //获取自己的签名
 
                         /*置pictureBox的Image自己的头像，Tag为自己的账号:10151100*/
                         pictureBox1.Image = Image.FromFile(Application.StartupPath + "\\image\\" + imageindex.ToString() + ".jpg");
-                        pictureBox1.Tag = (object)child.Name.Substring(5); //child.Name = "qqnum10151100"
-                        //MessageBox.Show(pictureBox1.Tag.ToString());
+                        pictureBox1.Tag = (object)myaccount; //101511
+
                         FormMain.Pmynum = pictureBox1.Tag.ToString();
                     }
-                    //MessageBox.Show("本人信息载入完成");
+
                 }
-                /*该账号的好友信息*/
-               else if (SuperirNode.Name == "friends")
+               else if (SuperirNode.Name == "friends") //好友信息
                 {
-                    /*
-                     //实例化SbItem对象，需要一个字符串和一个整形值座位参数
-                    SbItem item = new SbItem((string)reader["NickName"], (int)reader["FaceId"]);
-                    //把查询出来的好友帐号赋值给item的Tag标签
-                    item.Tag = (int)reader["FriendId"];
-                    //把item对象添加到好友组中
-                    sbFriends.Groups[0].Items.Add(item);
-                     */
 
-                    //sideBar1.Groups[0].Items.Clear();
-
-                    /*替换sidebar1*/
                     clb_friend.Items[0].SubItems.Clear();
 
                     foreach (XmlNode child in SuperirNode.ChildNodes)
                     {
-                        //<qqnum253841 name="Bryan" img="2" ison="1"></qqnum253841>
-                        //<qqnum333841 name="admin" img="3" ison="1"></qqnum333841>
-                        int imageindex = int.Parse(child.Attributes["img"].Value); //头像编号索引
-                          
-                        string name = child.Attributes["name"].Value;
+                        //<frienditem account="253841" name="Bryan" img="1"></frienditem> 
+                        //<frienditem account="100001" name="Alice" img="2"></frienditem>
+                        
+                        string account = child.Attributes["account"].Value; //获取好友账号
+                        string name = child.Attributes["name"].Value; //获取好友昵称
+                        int imageindex = int.Parse(child.Attributes["header"].Value); //获取好友头像编号索引
 
+                        //用name创建好友对象subitems，并将账号和头像加入创建的对象
                         ChatListSubItem subitems = new ChatListSubItem(name);
-                        subitems.ID = (uint)imageindex; //ID记录头像索引,用于clb_friend_DoubleClickSubItem中构建聊天窗口
+                        subitems.Tag = (object)account; //账号,253841
                         subitems.HeadImage = imageList1.Images[imageindex]; //HeadImage直接根据imageList1加载头像
-                        subitems.Tag = (object)child.Name.Substring(5); //账号,253841
+
+                        subitems.ID = (uint)imageindex; //ID记录头像索引,用于clb_friend_DoubleClickSubItem中构建聊天窗口
+                       
                         clb_friend.Items[0].SubItems.Add(subitems);
 
                     }
-                    //MessageBox.Show("朋友信息载入完成");
+
                 }
                 else if (SuperirNode.Name == "groups")
                 {

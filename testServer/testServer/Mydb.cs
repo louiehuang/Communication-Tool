@@ -9,8 +9,6 @@ namespace testServer
 {
     public class mydb
     {
-        //private string scn=@"data source=.;integrated security=true;initial catalog=db_xinxi";
-        //private string scn = @"server=.\SQLEXPRESS;database=db_xinxi;integrated security=true";
         private string scn;
         private SqlConnection cn;
         private SqlDataAdapter da;
