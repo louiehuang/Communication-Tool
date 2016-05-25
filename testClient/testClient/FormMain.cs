@@ -182,10 +182,8 @@ namespace testClient
                         /*
                          * [off][talk][101511]Shane 22:59:03:\nhello[e][talk][100001]Alice 22:59:30: Hi[e][talk][101511]Shane 22:59:42: FromShane[e]
                          * 分成
-                         * leftmsg[0] = "[talk][101511]Shane 22:59:03:\nhello\nShane 22:59:42:\nFromShane\n"
-                         * leftmsg[1] = "[talk][100001]Alice 22:59:30:\nHi\n"
-                         * 
-                         * 
+                         * ClassfiedMsg[0] = "[talk][101511]Shane 22:59:03:\nhello\nShane 22:59:42:\nFromShane\n"
+                         * ClassfiedMsg[1] = "[talk][100001]Alice 22:59:30:\nHi\n"
                          */
                         string[] LeftMsg = new string[100];
 
@@ -245,12 +243,6 @@ namespace testClient
                             }
                         }
 
-
-                        foreach (string str in ClassfiedMsg)
-                        {
-                            MessageBox.Show(str);
-                        }
-
                         foreach (string leftmsg in ClassfiedMsg)
                         {
                             string nums = leftmsg.Substring(7, 6); //发送者id
@@ -260,7 +252,7 @@ namespace testClient
                         }
 
 
-                    }
+                    } //if离线消息
                     else
                     {
                         MsgHandle.MSG = Readmsg;
@@ -269,6 +261,7 @@ namespace testClient
                         {
                             foreach (string msg in AllMsg)
                             {
+                                //MessageBox.Show(msg);
                                 if (msg.StartsWith("[welcome]"))//登陆成功
                                 {
                                     //[welcome]<all><MySimple><qqnum10151100 name="Shane" img="1" sign="no"><qqnum10151100></MySimple>
@@ -279,12 +272,21 @@ namespace testClient
                                 }
                                 else if (msg.StartsWith("[talk]")) //会话请求
                                 {
-                                    //101511发给253841信息:hello，则msg = "[talk][101511]Shane 18:33:59:\nhell"
+                                    //101511发给253841信息:hello，则msg = "[talk][101511]Shane 18:33:59:\nhello"
                                     //此处客户端为253841所打开的客户端
                                     string nums = msg.Substring(7, 6); //发送者id
                                     string mymsg = msg.Substring(14); //msg
 
                                     this.ProcessTalk(nums, mymsg);
+                                }
+                                else if (msg.StartsWith("[group]"))
+                                {
+                                    //MessageBox.Show("1 --- " + msg);
+                                    //101511向群组000001发送信息:hello，则msg = "[group][000001]Shane 18:34:09:\hello"
+                                    string groupid = msg.Substring(8, 6);
+                                    string groupmsg = msg.Substring(15); //Shane 18:34:09:\hello
+
+                                    this.ProcessGroupMsg(groupid, groupmsg);
                                 }
                             }
                         }
@@ -364,8 +366,63 @@ namespace testClient
             
         }
 
-        /*功能实现不完全，若A给B多次发送了消息，则B在托盘内只能一条一条读，且读下一条时必须关闭上一条打开的
-         聊天窗口才可以*/
+        public void ProcessGroupMsg(string groupid, string groupmsg)
+        {
+            // Shane在18:33:59给群组1发"hello",则Shane向服务器发送msg = "[talk][101511,000001]Shane 18:33:59:\nhello",
+            // Bryan收到的msg = "[group][000001]Shane 18:33:59:\nhello", groupid="000001", groupmsg="Shane 18:33:59:\nhello"
+
+            string name = "";
+            int img = 0;
+            bool groupchatformisopen = false;//表示是否有该窗体
+            byte[] msgbyte = Encoding.Unicode.GetBytes(groupmsg);//转成byte
+
+            //要从clb_group中搜索，获取groupid的header，name
+            //如果窗口没打开，显示在托盘
+            for (int i = 0; i < 1; i++)
+            {
+                for (int j = 0; j <  clb_group.Items[i].SubItems.Count; j++)
+                {
+                    if (clb_group.Items[i].SubItems[j].Tag.ToString() == groupid) //通过发送者账号获得发送者昵称
+                    {
+                        name = clb_group.Items[i].SubItems[j].NicName;
+                        img = (int)clb_group.Items[i].SubItems[j].ID;
+                        //MessageBox.Show(name);
+                    }
+                }
+            }
+
+            //MessageBox.Show("process");
+            //查找聊天窗口是否有打开
+            foreach (DictionaryEntry groupchats in myInfo.GroupChatForm)
+            {
+                if (groupchats.Key.ToString() == groupid)//有该窗体存在
+                {
+                    MessageBox.Show("processGroupMsg");
+                    groupchatformisopen = true;
+                    //更新聊天窗口中消息信息
+                    ((GroupChat)groupchats.Value).BeginInvoke(new UpdateChat(((GroupChat)groupchats.Value).updatemsg), new object[] { msgbyte });
+                }
+            }
+
+            //窗口未打开
+            if (!groupchatformisopen)//显示到托盘
+            {
+                //把消息打包
+                //allmsgs = "[msg]101511,Shane,5,Shane 18:33:59:\nhello"
+
+                //msg = [msg]101511,Shane,5,Shane 12:44:50:\nhello\nShane 12:45:08:\nHi[e][talk][100001]\nShane\n12:46:00:\nFromShaneAgain\n
+                
+                //群组: [msg]000001,Programming,2,Shane 12:44:50:\nhello\nAlice 12:45:23:\nHi\n
+                string allmsgs = "[msg]" + groupid + "," + name + "," + img.ToString() + "," + groupmsg;
+                this.BeginInvoke(new Showicon(myshow), new object[] { 6 }); //委托，托盘图标闪烁
+
+                updataMain handle = new updataMain(OnebyOne);
+                handle.BeginInvoke(allmsgs, null, null);
+                msgnums++;
+            }
+        
+        }
+
 
         public void OnebyOne(string msg)
         {
@@ -388,9 +445,22 @@ namespace testClient
             /*这里消息截图需要改，消息中含逗号时会被误分*/
             string[] alltemp = share.Substring(5).Split(',');
             byte[] mymsg = Encoding.Unicode.GetBytes(alltemp[3]);
-            FormChat mychat = new FormChat(this.pictureBox1.Tag.ToString(), alltemp[0], label1.Text, alltemp[1], int.Parse(alltemp[2]));
-            mychat.Show();
-            mychat.BeginInvoke(new UpdateChat(mychat.updatemsg), new object[] { mymsg });
+
+            if (int.Parse(alltemp[0]) >= 100000) //用户消息
+            {
+                FormChat mychat = new FormChat(this.pictureBox1.Tag.ToString(), alltemp[0], label1.Text, alltemp[1], int.Parse(alltemp[2]));
+                mychat.Show();
+                mychat.BeginInvoke(new UpdateChat(mychat.updatemsg), new object[] { mymsg });
+            }
+            else //群组消息
+            {
+                //[msg]000001,Programming,2,Shane 12:44:50:\nhello\nAlice 12:45:23:\nHi\n
+                //获取群组的所有用户
+                GroupChat groupchat = new GroupChat(this.pictureBox1.Tag.ToString(), alltemp[0], label1.Text, alltemp[1], int.Parse(alltemp[2]));
+
+
+            }
+
         }
 
 
@@ -528,6 +598,48 @@ namespace testClient
         }
 
 
+        private void clb_group_DoubleClickSubItem(object sender, ChatListEventArgs e, MouseEventArgs es)
+        {
+            // Tag 为群组号
+            if (es.Button == MouseButtons.Right)
+            {
+                return;
+            }
+            ChatListSubItem item = e.SelectSubItem;
+            item.IsTwinkle = false;
+
+            string num = item.Tag.ToString(); //000001
+
+            bool isshow = false;
+            // 若已经打开了与被选中对象的聊天窗口，则给焦点激活
+            foreach (DictionaryEntry mygroupchat in myInfo.GroupChatForm)
+            {
+                if (mygroupchat.Key.ToString() == num)
+                {
+                    isshow = true;
+                    ((FormChat)mygroupchat.Value).Activate();
+                }
+            }
+
+            // 若没有打开过与该对象的聊天窗口，则构造窗口并显示
+            if (!isshow)
+            {
+                //获取自己的账号id
+                string mynum = pictureBox1.Tag.ToString();
+
+                //获取选中群组的名称
+                string name = item.NicName;
+
+                //获取选中群组的头像索引
+                int img = (int)item.ID; //用ID属性表示头像索引
+
+                //实例化一个聊天界面
+                GroupChat groupchat = new GroupChat(mynum, num, label1.Text, name, img);
+                groupchat.Show();
+            }
+        }
+
+
         /// <summary>
         /// 由xml形式的字符串加载自己的信息和好友资料
         /// </summary>
@@ -553,12 +665,16 @@ namespace testClient
             /*
              * <all>
              *          <MySimple>
-             *                  <qqnum101511 name="Shane" img=19 sign="签名测试"></qqnum101511>
+             *                  <qqnum101511 name="Shane" img="19" sign="签名测试"></qqnum101511>
              *          </MySimple>
              *          <friends>
-             *                  <qqnum253841 name="Bryan" img=1 ison=0></qqnum253841>
-             *                  <qqnum100002 name="测试用户" img=4 ison="yes"></qqnum100002>
+             *                  <qqnum253841 name="Bryan" img="1" ison=0></qqnum253841>
+             *                  <qqnum100002 name="测试用户" img="4" ison="yes"></qqnum100002>
              *          </friend>
+             *          <groups>
+             *                  <groupitem num="000001" name="DataBase" header="1"></groupitem>
+             *                  <groupitem num="000002" name="C#" header="2"></groupitem>
+             *          </groups>
              * </all>
              */
 
@@ -586,9 +702,8 @@ namespace testClient
                     }
                     //MessageBox.Show("本人信息载入完成");
                 }
-
                 /*该账号的好友信息*/
-                if (SuperirNode.Name == "friends")
+               else if (SuperirNode.Name == "friends")
                 {
                     /*
                      //实例化SbItem对象，需要一个字符串和一个整形值座位参数
@@ -621,8 +736,34 @@ namespace testClient
                     }
                     //MessageBox.Show("朋友信息载入完成");
                 }
-            }//更新主窗体
+                else if (SuperirNode.Name == "groups")
+                {
+                    clb_group.Items[0].SubItems.Clear();
+
+                    foreach (XmlNode child in SuperirNode.ChildNodes)
+                    {
+                        //<groupitem num="000001" name="DataBase" header="1"></groupitem>
+                       // <groupitem num="000002" name="C#" header="2"></groupitem>
+                        string num = child.Attributes["num"].Value;
+                        int imageindex = int.Parse(child.Attributes["header"].Value); //头像编号索引
+
+                        string name = child.Attributes["name"].Value;
+
+                        ChatListSubItem subitems = new ChatListSubItem(name);
+                        subitems.ID = (uint)imageindex; //ID记录头像索引,用于clb_friend_DoubleClickSubItem中构建聊天窗口
+                        subitems.HeadImage = imageList1.Images[imageindex]; //HeadImage直接根据imageList1加载头像
+                        subitems.Tag = (object)num; //群号,000001
+
+                        clb_group.Items[0].SubItems.Add(subitems);
+
+                    }
+                    
+                }
+
+            }
         }
+
+
 
 
 

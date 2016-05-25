@@ -29,12 +29,12 @@
         private void InitializeComponent()
         {
             this.components = new System.ComponentModel.Container();
+            CCWin.SkinControl.ChatListItem chatListItem1 = new CCWin.SkinControl.ChatListItem();
             CCWin.SkinControl.ChatListItem chatListItem2 = new CCWin.SkinControl.ChatListItem();
-            CCWin.SkinControl.ChatListItem chatListItem5 = new CCWin.SkinControl.ChatListItem();
             CCWin.SkinControl.ChatListItem chatListItem3 = new CCWin.SkinControl.ChatListItem();
-            CCWin.SkinControl.ChatListSubItem chatListSubItem2 = new CCWin.SkinControl.ChatListSubItem();
+            CCWin.SkinControl.ChatListSubItem chatListSubItem1 = new CCWin.SkinControl.ChatListSubItem();
             System.ComponentModel.ComponentResourceManager resources = new System.ComponentModel.ComponentResourceManager(typeof(FormMain));
-            CCWin.SkinControl.Animation animation2 = new CCWin.SkinControl.Animation();
+            CCWin.SkinControl.Animation animation1 = new CCWin.SkinControl.Animation();
             this.clb_friend = new CCWin.SkinControl.ChatListBox();
             this.clb_group = new CCWin.SkinControl.ChatListBox();
             this.imageList1 = new System.Windows.Forms.ImageList(this.components);
@@ -65,19 +65,19 @@
             this.clb_friend.Font = new System.Drawing.Font("微软雅黑", 9F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(134)));
             this.clb_friend.ForeColor = System.Drawing.Color.Black;
             this.clb_friend.FriendsMobile = true;
-            chatListItem2.Bounds = new System.Drawing.Rectangle(0, 1, 280, 25);
+            chatListItem1.Bounds = new System.Drawing.Rectangle(0, 1, 280, 25);
+            chatListItem1.IsTwinkleHide = false;
+            chatListItem1.OwnerChatListBox = this.clb_friend;
+            chatListItem1.Text = "我的好友";
+            chatListItem1.TwinkleSubItemNumber = 0;
+            chatListItem2.Bounds = new System.Drawing.Rectangle(0, 27, 280, 25);
             chatListItem2.IsTwinkleHide = false;
             chatListItem2.OwnerChatListBox = this.clb_friend;
-            chatListItem2.Text = "我的好友";
+            chatListItem2.Text = "其他用户";
             chatListItem2.TwinkleSubItemNumber = 0;
-            chatListItem5.Bounds = new System.Drawing.Rectangle(0, 27, 280, 25);
-            chatListItem5.IsTwinkleHide = false;
-            chatListItem5.OwnerChatListBox = this.clb_friend;
-            chatListItem5.Text = "其他用户";
-            chatListItem5.TwinkleSubItemNumber = 0;
             this.clb_friend.Items.AddRange(new CCWin.SkinControl.ChatListItem[] {
-            chatListItem2,
-            chatListItem5});
+            chatListItem1,
+            chatListItem2});
             this.clb_friend.ListSubItemMenu = null;
             this.clb_friend.Location = new System.Drawing.Point(0, 0);
             this.clb_friend.Name = "clb_friend";
@@ -95,29 +95,29 @@
             this.clb_group.Font = new System.Drawing.Font("微软雅黑", 9F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(134)));
             this.clb_group.ForeColor = System.Drawing.Color.Black;
             this.clb_group.FriendsMobile = true;
-            chatListItem3.Bounds = new System.Drawing.Rectangle(0, 1, 254, 25);
+            chatListItem3.Bounds = new System.Drawing.Rectangle(0, 1, 274, 25);
             chatListItem3.IsTwinkleHide = false;
             chatListItem3.OwnerChatListBox = this.clb_group;
-            chatListSubItem2.Bounds = new System.Drawing.Rectangle(0, 0, 0, 0);
-            chatListSubItem2.DisplayName = "displayName";
-            chatListSubItem2.HeadImage = null;
-            chatListSubItem2.HeadRect = new System.Drawing.Rectangle(0, 0, 0, 0);
-            chatListSubItem2.ID = ((uint)(0u));
-            chatListSubItem2.IpAddress = null;
-            chatListSubItem2.IsTwinkle = false;
-            chatListSubItem2.IsTwinkleHide = false;
-            chatListSubItem2.IsVip = false;
-            chatListSubItem2.NicName = "nicName";
-            chatListSubItem2.OwnerListItem = chatListItem3;
-            chatListSubItem2.PersonalMsg = "Personal Message ...";
-            chatListSubItem2.PlatformTypes = CCWin.SkinControl.PlatformType.PC;
-            chatListSubItem2.QQShow = null;
-            chatListSubItem2.Status = CCWin.SkinControl.ChatListSubItem.UserStatus.Online;
-            chatListSubItem2.Tag = null;
-            chatListSubItem2.TcpPort = 0;
-            chatListSubItem2.UpdPort = 0;
+            chatListSubItem1.Bounds = new System.Drawing.Rectangle(0, 0, 0, 0);
+            chatListSubItem1.DisplayName = "displayName";
+            chatListSubItem1.HeadImage = null;
+            chatListSubItem1.HeadRect = new System.Drawing.Rectangle(0, 0, 0, 0);
+            chatListSubItem1.ID = ((uint)(0u));
+            chatListSubItem1.IpAddress = null;
+            chatListSubItem1.IsTwinkle = false;
+            chatListSubItem1.IsTwinkleHide = false;
+            chatListSubItem1.IsVip = false;
+            chatListSubItem1.NicName = "nicName";
+            chatListSubItem1.OwnerListItem = chatListItem3;
+            chatListSubItem1.PersonalMsg = "Personal Message ...";
+            chatListSubItem1.PlatformTypes = CCWin.SkinControl.PlatformType.PC;
+            chatListSubItem1.QQShow = null;
+            chatListSubItem1.Status = CCWin.SkinControl.ChatListSubItem.UserStatus.Online;
+            chatListSubItem1.Tag = null;
+            chatListSubItem1.TcpPort = 0;
+            chatListSubItem1.UpdPort = 0;
             chatListItem3.SubItems.AddRange(new CCWin.SkinControl.ChatListSubItem[] {
-            chatListSubItem2});
+            chatListSubItem1});
             chatListItem3.Text = "我的群组";
             chatListItem3.TwinkleSubItemNumber = 0;
             this.clb_group.Items.AddRange(new CCWin.SkinControl.ChatListItem[] {
@@ -130,6 +130,7 @@
             this.clb_group.SubItemMenu = null;
             this.clb_group.TabIndex = 0;
             this.clb_group.Text = "chatListBox1";
+            this.clb_group.DoubleClickSubItem += new CCWin.SkinControl.ChatListBox.ChatListEventHandler(this.clb_group_DoubleClickSubItem);
             // 
             // imageList1
             // 
@@ -188,22 +189,22 @@
             // 
             // TabControl1
             // 
-            animation2.AnimateOnlyDifferences = false;
-            animation2.BlindCoeff = ((System.Drawing.PointF)(resources.GetObject("animation2.BlindCoeff")));
-            animation2.LeafCoeff = 0F;
-            animation2.MaxTime = 1F;
-            animation2.MinTime = 0F;
-            animation2.MosaicCoeff = ((System.Drawing.PointF)(resources.GetObject("animation2.MosaicCoeff")));
-            animation2.MosaicShift = ((System.Drawing.PointF)(resources.GetObject("animation2.MosaicShift")));
-            animation2.MosaicSize = 0;
-            animation2.Padding = new System.Windows.Forms.Padding(0);
-            animation2.RotateCoeff = 0F;
-            animation2.RotateLimit = 0F;
-            animation2.ScaleCoeff = ((System.Drawing.PointF)(resources.GetObject("animation2.ScaleCoeff")));
-            animation2.SlideCoeff = ((System.Drawing.PointF)(resources.GetObject("animation2.SlideCoeff")));
-            animation2.TimeCoeff = 2F;
-            animation2.TransparencyCoeff = 0F;
-            this.TabControl1.Animation = animation2;
+            animation1.AnimateOnlyDifferences = false;
+            animation1.BlindCoeff = ((System.Drawing.PointF)(resources.GetObject("animation1.BlindCoeff")));
+            animation1.LeafCoeff = 0F;
+            animation1.MaxTime = 1F;
+            animation1.MinTime = 0F;
+            animation1.MosaicCoeff = ((System.Drawing.PointF)(resources.GetObject("animation1.MosaicCoeff")));
+            animation1.MosaicShift = ((System.Drawing.PointF)(resources.GetObject("animation1.MosaicShift")));
+            animation1.MosaicSize = 0;
+            animation1.Padding = new System.Windows.Forms.Padding(0);
+            animation1.RotateCoeff = 0F;
+            animation1.RotateLimit = 0F;
+            animation1.ScaleCoeff = ((System.Drawing.PointF)(resources.GetObject("animation1.ScaleCoeff")));
+            animation1.SlideCoeff = ((System.Drawing.PointF)(resources.GetObject("animation1.SlideCoeff")));
+            animation1.TimeCoeff = 2F;
+            animation1.TransparencyCoeff = 0F;
+            this.TabControl1.Animation = animation1;
             this.TabControl1.AnimatorType = CCWin.SkinControl.AnimationType.HorizSlide;
             this.TabControl1.CloseRect = new System.Drawing.Rectangle(2, 2, 12, 12);
             this.TabControl1.Controls.Add(this.tabPage1);

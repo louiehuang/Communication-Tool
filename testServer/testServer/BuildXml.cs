@@ -52,6 +52,33 @@ any(select Friend_friendid from Friends where Friend_hostid='" + QQnum + "')";
             return friends;
         }
 
+        public string BuildGroup()
+        {
+            string groups = "<groups>";
+            DataSet ds = new DataSet();
+            try
+            {
+                string sql = @"select Group_num as 群组号,Group_name as 群名,Group_header as 图像 from Groups where Group_num=
+any(select groupnum from Belongs where userid='" + QQnum + "')";
+                ds = db.Query(sql);
+            }
+            catch (Exception e)
+            {
+                MessageBox.Show("Query Groups Error:\n" + e.Message);
+            }
+
+            foreach (DataRow row in ds.Tables[0].Rows) //查询出来的第一个表Tables[0]
+            {
+                groups += String.Format("<groupitem num=\"{0}\" name=\"{1}\" header=\"{2}\"></groupitem>\n",
+                    row["群组号"].ToString(), row["群名"].ToString(), row["图像"].ToString());
+            }
+            groups += "</groups>";
+
+            return groups;
+        }
+
+
+
         public string BuildLeftMsg()
         {
             string leftmsg = "<leftmsg>";

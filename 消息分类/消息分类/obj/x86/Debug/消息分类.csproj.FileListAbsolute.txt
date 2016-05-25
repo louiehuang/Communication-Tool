@@ -1,0 +1,8 @@
+E:\DataBase\ProjectChat\消息分类\消息分类\obj\x86\Debug\消息分类.Form1.resources
+E:\DataBase\ProjectChat\消息分类\消息分类\obj\x86\Debug\消息分类.Properties.Resources.resources
+E:\DataBase\ProjectChat\消息分类\消息分类\obj\x86\Debug\消息分类.csproj.GenerateResource.Cache
+E:\DataBase\ProjectChat\消息分类\消息分类\bin\Debug\消息分类.exe
+E:\DataBase\ProjectChat\消息分类\消息分类\bin\Debug\消息分类.pdb
+E:\DataBase\ProjectChat\消息分类\消息分类\obj\x86\Debug\消息分类.exe
+E:\DataBase\ProjectChat\消息分类\消息分类\obj\x86\Debug\消息分类.pdb
+E:\DataBase\ProjectChat\消息分类\消息分类\obj\x86\Debug\消息分类.csprojResolveAssemblyReference.cache

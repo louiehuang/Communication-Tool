@@ -28,6 +28,8 @@ namespace testServer
         Thread myThread;
         bool isend;
 
+        public static ManualResetEvent allDone = new ManualResetEvent(false);
+
         private void button1_Click(object sender, EventArgs e)
         {
             myListener = new TcpListener(EndPoint);
@@ -51,7 +53,9 @@ namespace testServer
             //轮询接受客户端请求
             while (true && !isend)
             {
+                allDone.Set();
                 MyUser client = new MyUser(myListener.AcceptTcpClient());////////////
+                allDone.WaitOne();
             }
         }
 

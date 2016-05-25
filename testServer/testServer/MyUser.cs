@@ -16,6 +16,7 @@ namespace testServer
         public delegate void handle(string num1, string num2);//委托，用于异步调用处理操作db和转发
         public static Hashtable AllOnlineUser = new Hashtable();//存储在线用户的号码和对应的实例
         private string MyFriendList = "";//我的好友
+        private string MyGroupList = "";//我的群组
         private string MyAllOnlineFriends = "";//当前用户的在线好友名单，之间用逗号分开
         private string MyQQnum = "";
 
@@ -89,8 +90,38 @@ namespace testServer
                                 handlefortalk handletalk = new handlefortalk(StartTalk);
                                 handletalk.BeginInvoke(Nums[0], Nums[1], msg, null, null);
                             }
-                        }
-                    }
+                            else if(msg.StartsWith("[group]"))
+                            {
+                                //Shane向群组000001发送hello
+                                //则服务器收到[group][000001]Shane 18:29:39:\nhello
+                                //查询群组000001中的所有用户，向这些用户发送[group][000001]Shane 18:29:39:\nhello
+                                string groupid = msg.Substring(8, 6);
+
+                                
+                                string[] groupuser = ManageNum.GetUserInGroup(groupid); //获取groupid群组的所有用户
+                                
+                                //算了200个groupuser,不对,改成people==null的判断后对了，但客户端未显示
+                                foreach (string people in groupuser) //101511 253841 100001
+                                {
+                                    if (people == string.Empty || people == null)
+                                        break;
+                                    //MessageBox.Show("people in group: " + people); //101511 253841 100001
+                                    foreach (DictionaryEntry QQnum in AllOnlineUser) //101511,253841
+                                    {
+                                        //MessageBox.Show("QQnum: " + QQnum.Key.ToString());
+
+                                        if ((QQnum.Key).ToString() == people && (QQnum.Key).ToString() != MyQQnum) //给除了自己的发
+                                        {
+                                            //MessageBox.Show("msg: " + msg);
+
+                                            ((MyUser)QQnum.Value).SendMsg(msg + "[e]");
+                                        }
+                                    }
+                                }
+
+                            }//else if
+                        }//foreach
+                    }//if
 
                 }
                 lock (networkStream)
@@ -102,11 +133,13 @@ namespace testServer
             catch (Exception ex)
             {
                 //MessageBox.Show("异常——" + ex.Message);
+                /*
                 string tempall = this.GetAllnumsOnline();//获得在线的好友陌生人和黑名单的xml格式
                 string[] temppele = this.build.GetAllNums(tempall).Split(',');//从XML格式中提取所有QQ号码，用“，”分开
                 this.SendMsgToAllPeople("[down][" + this.MyQQnum + "][e]", temppele);//告诉有关的所有人QQnum下线了
                 ManageUser down = new ManageUser();
                 down.DownLine(MyQQnum);
+                 * */
                 AllOnlineUser.Remove(this.MyQQnum);//从在线名单中删除这个对象实例
             }
         }
@@ -208,7 +241,7 @@ namespace testServer
                 string LeftMsg = ManageNum.GetLeftMsg();//获得用户未的离线消息
                 //LeftMsg = "[talk][101511]Shane 18:33:59:\nhello[e][off][talk][101511]Shane 19:33:59:\nHi[e]"
 
-                if (LeftMsg != string.Empty)//如果未收到的消息不为空
+                if (LeftMsg.Length > 5)//如果未收到的消息不为空，因为开头是[off]，所以长度要大于5才是消息不空
                 {
                     //string SendLeftMsg = "[talk][" + MyQQnum + "]" + LeftMsg;
                     this.SendMsgToSomebody(LeftMsg, num);//发送未收到的信息
@@ -234,7 +267,9 @@ namespace testServer
         public string GetAllnumsOnline()//把好友组合成一个xml格式
         {
             this.MyFriendList = build.BuildFriend();
-            string result = "<all>" + this.ManageNum.GetSimpleDate() + this.MyFriendList + "</all>";
+            this.MyGroupList = build.BuildGroup();
+
+            string result = "<all>" + this.ManageNum.GetSimpleDate() + this.MyFriendList + this.MyGroupList + "</all>";
 
             //MessageBox.Show(result);
 

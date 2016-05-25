@@ -13,7 +13,8 @@ namespace testClient
         public static string ChildFromMsg = null; //子窗体信息
         public static byte[] Talk;
         public static bool picture = false; //聊天发送框是否有图
-        public static Hashtable ChatForm = new Hashtable(); //用户打开的多个聊天界面, FormChar构造函数中加入
+        public static Hashtable ChatForm = new Hashtable(); //用户打开的多个聊天界面, FormChat构造函数中加入
+        public static Hashtable GroupChatForm = new Hashtable(); //用户打开的多个群组聊天界面, GroupChat构造函数中加入
         public static Hashtable UserDate = new Hashtable();
         //public static List<FindUser> FindForm = new List<FindUser>();
     }

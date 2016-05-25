@@ -53,6 +53,23 @@ namespace testServer
             return result;
         }
 
+        public string[] GetUserInGroup(string groupnum)
+        {
+            string[] result = new string[200]; //假设群组上限200人
+            string sql = "select userid from Belongs WHERE groupnum = '" + groupnum + "'";
+            DataSet ds = new DataSet();
+            ds = db.Query(sql);
+
+            int i = 0;
+            foreach (DataRow row in ds.Tables[0].Rows) //查询出来的第一个表Tables[0]
+            {
+                result[i] = row["userid"].ToString();
+                i++;
+            }
+
+            return result;
+        }
+
 
         /// <summary>
         /// 如果somebody不在线，则把msg保留到数据库
