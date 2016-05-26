@@ -22,3 +22,13 @@ E:\DataBase\STTest\testServer\testServer\obj\x86\Debug\testServer.csprojResolveA
 E:\DataBase\STTest\testServer\testServer\obj\x86\Debug\testServer.Form1.resources
 E:\DataBase\STTest\testServer\testServer\obj\x86\Debug\testServer.Properties.Resources.resources
 E:\DataBase\STTest\testServer\testServer\obj\x86\Debug\testServer.csproj.GenerateResource.Cache
+E:\DataBase\ProjectChat\temp\testServer\testServer\obj\x86\Debug\testServer.exe
+E:\DataBase\ProjectChat\temp\testServer\testServer\obj\x86\Debug\testServer.pdb
+E:\DataBase\ProjectChat\temp\testServer\testServer\bin\Debug\testServer.exe
+E:\DataBase\ProjectChat\temp\testServer\testServer\bin\Debug\testServer.pdb
+E:\DataBase\ProjectChat\temp\testServer\testServer\obj\x86\Debug\testServer.csprojResolveAssemblyReference.cache
+E:\DataBase\ProjectChat\temp\testServer\testServer\obj\x86\Debug\testServer.Form1.resources
+E:\DataBase\ProjectChat\temp\testServer\testServer\obj\x86\Debug\testServer.Properties.Resources.resources
+E:\DataBase\ProjectChat\temp\testServer\testServer\obj\x86\Debug\testServer.csproj.GenerateResource.Cache
+E:\DataBase\ProjectChat\mybackup\version16\testServer\testServer\obj\x86\Debug\testServer.exe
+E:\DataBase\ProjectChat\mybackup\version16\testServer\testServer\obj\x86\Debug\testServer.pdb

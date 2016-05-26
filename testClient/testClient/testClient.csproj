@@ -53,9 +53,6 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="BaseFormGradient.cs">
-      <SubType>Form</SubType>
-    </Compile>
     <Compile Include="FormChat.cs">
       <SubType>Form</SubType>
     </Compile>
@@ -84,9 +81,6 @@
     <Compile Include="myInfo.cs" />
     <Compile Include="Program.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
-    <EmbeddedResource Include="BaseFormGradient.resx">
-      <DependentUpon>BaseFormGradient.cs</DependentUpon>
-    </EmbeddedResource>
     <EmbeddedResource Include="FormChat.resx">
       <DependentUpon>FormChat.cs</DependentUpon>
     </EmbeddedResource>

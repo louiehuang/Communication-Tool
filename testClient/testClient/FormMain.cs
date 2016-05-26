@@ -571,7 +571,6 @@ namespace testClient
         }
 
 
-
         /// <summary>
         /// 双击好友项时弹出聊天窗口
         /// </summary>

@@ -18,14 +18,17 @@ namespace testServer
         private string MyGroupList = "";//我的群组，xml形式的字符串
         private UserInfoXml build;//构建好友、陌生人、黑名单XML格式字符串
 
-        public delegate void handleMsgSending(string fromuser, string touser, string msg);//委托消息发送操作
-        public delegate void handleAsync(string num1, string num2);//委托普通的异步操作(登陆)
+        BLL_Users BLL_user = new BLL_Users();
+        BLL_Groups BLL_group = new BLL_Groups();
+
+        public delegate void PersonalMsgEventHandler(string fromuser, string touser, string msg);//委托私聊消息发送操作
+        public delegate void LoginEventHandler(string num1, string num2);//委托登陆操作
+        public delegate void GroupMsgEventHandler(string fromuser, string groupnum, string msg);//委托群组消息发送操作
 
         public static Hashtable OnlineUserTable = new Hashtable();//在线用户表,记录在线用户的账号(键)及其对象(值)
 
         //private string MyAllOnlineFriends = "";//当前用户的在线好友名单，之间用逗号分开
         
-        private HandleUserEvent handleUserEvent;
 
         TcpClient user;
         NetworkStream networkStream;
@@ -94,7 +97,7 @@ namespace testServer
                                 string account = msg.Substring(8, 6); //101511
                                 string pwd = msg.Substring(15, msg.Length - 16); //1111
 
-                                handleAsync handlelogin = new handleAsync(StartLogin);
+                                LoginEventHandler handlelogin = new LoginEventHandler(StartLogin);
                                 handlelogin.BeginInvoke(account, pwd, null, null);
 
                             }
@@ -109,46 +112,24 @@ namespace testServer
                                 string fromuser = msg.Substring(7, 6); //101511
                                 string touser = msg.Substring(14, 6); //253841
 
-                                handleMsgSending handletalk = new handleMsgSending(StartTalk);
-                                handletalk.BeginInvoke(fromuser, touser, msg, null, null);
+                                PersonalMsgEventHandler personalchatHandler = new PersonalMsgEventHandler(StartPersonalChat);
+                                personalchatHandler.BeginInvoke(fromuser, touser, msg, null, null);
 
                             }
                             else if(msg.StartsWith("[group]")) //群聊请求
                             {
                                 //Shane向群组000001发送消息"hello"
-                                //则服务器收到msg = "[group][000001]Shane 18:29:39:\nhello",
-                                //查询群组000001中的所有用户，向这些用户发送[group][000001]Shane 18:29:39:\nhello
+                                //则服务器收到msg = "[group][101511,000001]Shane 18:29:39:\nhello",
+                                //查询群组000001中的所有用户，向这些用户发送sendmsg = "[group][000001]Shane 18:29:39:\nhello"
                                 
                                 //获取群号
-                                string groupid = msg.Substring(8, 6);//000001
+                                string fromuser = msg.Substring(8, 6); //101511
+                                string groupid = msg.Substring(15, 6);//000001
+                                string sendmsg = msg.Substring(0, 8) + msg.Substring(15);
+                                //MessageBox.Show(sendmsg);
 
-                                //通过数据库Belongs表查询groupid的所有用户
-                                string[] groupuser = handleUserEvent.GetUserInGroup(groupid);
-
-                                //对groupuser中的每个用户进行判断，若其在线，则将消息发送
-                                //若不在线，则将消息存入其在Users表中的offlinemsg字段
-                                //群组离线消息暂未实现
-                                foreach (string eachuser in groupuser) //101511 253841 100001
-                                {
-                                    //GetUserInGroup返回了有200个单元的string数组groupuser，多余的单元为空值
-                                    //因此读到空时说明已经groupuser中的所有用户发完群消息，即应退出循环
-                                    if (eachuser == string.Empty || eachuser == null)
-                                        break;
-                                    //MessageBox.Show("people in group: " + people); //101511 253841 100001
-                                    foreach (DictionaryEntry onlineuser in OnlineUserTable) //101511,253841
-                                    {
-                                        //MessageBox.Show("QQnum: " + QQnum.Key.ToString());
-
-                                        if ((onlineuser.Key).ToString() == eachuser && (onlineuser.Key).ToString() != MyAccount) //给除了自己的发
-                                        {
-                                            //MessageBox.Show("msg: " + msg);
-                                            //加分隔符[e]发送
-                                            ((ProcessUserRequest)onlineuser.Value).SendMsg(msg + "[e]");
-                                        }
-
-                                    } //foreach
-
-                                } //foreach
+                                GroupMsgEventHandler groupchatHandler = new GroupMsgEventHandler(StartGroupChat);
+                                groupchatHandler.BeginInvoke(fromuser, groupid, sendmsg, null, null);
 
                             }//else if
                         }//foreach
@@ -164,16 +145,57 @@ namespace testServer
             catch (Exception ex)
             {
                 //MessageBox.Show("异常——" + ex.Message);
-                /*
-                string tempall = this.GetAllInfoOfCurrentUser();//获得在线的好友陌生人和黑名单的xml格式
-                string[] temppele = this.build.GetAllNums(tempall).Split(',');//从XML格式中提取所有QQ号码，用“，”分开
-                this.SendMsgToAllUsers("[down][" + this.MyAccount + "][e]", temppele);//告诉有关的所有人QQnum下线了
-                ManageUser down = new ManageUser();
-                down.DownLine(MyAccount);
-                 * */
+                
                 OnlineUserTable.Remove(this.MyAccount);//在线用户表中删除当前用户
             }
         }
+
+        public void StartGroupChat(string fromuser, string groupnum, string msg)
+        {
+            //msg = "[group][000001]Shane 18:29:39:\nhello"
+            //通过数据库Belongs表查询groupid的所有用户
+            string[] groupuser = BLL_group.BLL_Groups_GetUserInGroup(groupnum);
+
+            //对groupuser中的每个用户进行判断，若其在线，则将消息发送
+            //若不在线，则将消息存入其在Users表中的offlinemsg字段
+            //群组离线消息暂未实现
+            foreach (string eachuser in groupuser) //101511 253841 100001
+            {
+                //GetUserInGroup返回了有200个单元的string数组groupuser，多余的单元为空值
+                //因此读到空时说明已经groupuser中的所有用户发完群消息，即应退出循环
+                if (eachuser == string.Empty || eachuser == null)
+                    break;
+                //MessageBox.Show("people in group: " + people); //101511 253841 100001
+                foreach (DictionaryEntry onlineuser in OnlineUserTable) //101511,253841
+                {
+                    //MessageBox.Show("QQnum: " + QQnum.Key.ToString());
+                    if ((onlineuser.Key).ToString() == eachuser && (onlineuser.Key).ToString() != MyAccount) //给除了自己的发
+                    {
+                        //MessageBox.Show("msg: " + msg);
+                        //加分隔符[e]发送
+                        ((ProcessUserRequest)onlineuser.Value).SendMsg(msg + "[e]");
+                    }
+                }
+            }
+
+            /*正则表达式获取字符串内时间，第一个匹配到的时间是客户端程序设置的发送时间*/
+            Regex reg = new Regex(@"\d{1,2}:\d{1,2}:\d{1,2}");
+            Match m = reg.Match(msg);
+            string time = m.Result("$0");
+
+            /*获取msg内的实际消息hello*/
+            int index = msg.IndexOf("\n"); //第一个\n后实际消息开始
+            string realmsg = msg.Substring(index); //realmsg = "hello";
+
+            /*存入数据库GroupMsg表*/
+            //101511, 000001, 18:33:59, hello
+            //SaveGrouplMsg(fromuser, groupnum, time, realmsg);
+            //MessageBox.Show(fromuser + "," + groupnum + ", " + time + ", " + realmsg);
+            BLL_group.BLL_Groups_SaveGroupMsg(fromuser, groupnum, time, realmsg);
+
+        }
+
+
 
         /// <summary>
         /// 处理[talk]私聊请求
@@ -181,7 +203,7 @@ namespace testServer
         /// <param name="fromuser"></param>
         /// <param name="touser"></param>
         /// <param name="msg"></param>
-        public void StartTalk(string fromuser, string touser, string msg)//fromuser发送给touser msg
+        public void StartPersonalChat(string fromuser, string touser, string msg)//fromuser发送给touser msg
         {
             /* 发送形式[talk][fromuser]msg
              * fromuser = 101511, touser = 253841
@@ -219,24 +241,11 @@ namespace testServer
 
             /*存入数据库PersonalMsg表*/
             //101511, 253841, 18:33:59, hello
-            SavePersonalMsg(fromuser, touser, time, realmsg);
+            //SavePersonalMsg(fromuser, touser, time, realmsg);
+            BLL_user.BLL_Users_SavePersonalMsg(fromuser, touser, time, realmsg);
 
         }
 
-
-        /// <summary>
-        /// 消息存入数据库的PersonalMsg表
-        /// </summary>
-        public void SavePersonalMsg(string fromuser, string touser, string time, string realmsg)
-        {
-            mydb db = new mydb();
-
-            string sql = string.Format("INSERT INTO PersonalMsg (PM_fromuser,PM_touser,PM_time,PM_content) values ('{0}','{1}','{2}','{3}')",
-                                fromuser, touser, time, realmsg);
-
-            int i = db.QueryReturn(sql); //i=1则插入正常，若异常，在QueryReturn方法中有接收抛出的异常
-
-        }
 
         /// <summary>
         /// 处理[login]登陆请求
@@ -245,14 +254,12 @@ namespace testServer
         /// <param name="psw"></param>
         public void StartLogin(string account, string pwd)//登陆判断
         {
-            UserLogin login = new UserLogin(account, pwd);
-
-            if (login.Permit())//true, 登陆成功
+            //查询用户登录请求是否被允许，若允许则继续处理
+            if(BLL_user.BLL_Users_LoginPermission(account,pwd) == true)
             {
                 OnlineUserTable.Add(account, this); //当前用户加入在线用户表
 
                 MyAccount = account; //此线程用户的账号为登陆请求传来的account
-                handleUserEvent = new HandleUserEvent(account);
 
                 //创建要传回客户端的xml字符串(包括个人信息、好友信息和群组信息)
                 build = new UserInfoXml(account);
@@ -274,15 +281,17 @@ namespace testServer
 
 
                 /* 获取当前用户的离线消息并发回 */
-                string LeftMsg = handleUserEvent.GetLeftMsg();//获得用户未的离线消息
-                //LeftMsg = "[off][talk][101511]Shane 18:33:59:\nhello[e][talk][101511]Shane 19:33:59:\nHi[e]"
+                string OfflineMsg = BLL_user.BLL_Users_GetOfflineMsg(account); //获得用户未的离线消息
 
-                //MessageBox.Show("server: \n" + LeftMsg);
-                if (LeftMsg.Length > 5)//如果未收到的消息不为空，因为开头是[off]，所以长度要大于5才是消息不空
+                //OfflineMsg = "[off][talk][101511]Shane 18:33:59:\nhello[e][talk][101511]Shane 19:33:59:\nHi[e]"
+
+                //MessageBox.Show("server: \n" + OfflineMsg);
+                if (OfflineMsg.Length > 5)//如果未收到的消息不为空，因为开头是[off]，所以长度要大于5才是消息不空
                 {
-                    this.SendMsgToCertainUser(LeftMsg, account);//发送未收到的信息
-                    //MessageBox.Show(LeftMsg);
-                    handleUserEvent.ClearLeftMsg();//清空未收到的信息
+                    this.SendMsgToCertainUser(OfflineMsg, account);//发送未收到的信息
+                    //MessageBox.Show(OfflineMsg);
+                    BLL_user.BLL_Users_ClearOfflineMsg(account);
+
                 }
                 //MessageBox.Show("Login Succeed");
 
@@ -364,8 +373,8 @@ namespace testServer
 
                 //string leftmsg = msg.Substring(14, msg.Length - 14 - 3) + "\n"; //Shane 18:33:59:\nhello\n
                 //msg += "[e]";//因为可能有多条留言，所以用[e]分开，前面调用已经加过[e]了
-                HandleUserEvent saveMsg = new HandleUserEvent();
-                saveMsg.saveMsgToOfflinemsg(offlineMsg, account);
+
+                BLL_user.BLL_Users_saveMsgToOfflinemsg(offlineMsg, account);
 
             }
         }
