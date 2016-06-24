@@ -14,6 +14,10 @@ namespace testClient
             get { return Msg; }
         }
 
+        /// <summary>
+        /// 将收到的消息按[e]切分成多条
+        /// </summary>
+        /// <returns>切分后的消息</returns>
         public string[] process()
         {
             List<string> splittedMsg = new List<string>();

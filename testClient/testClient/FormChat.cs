@@ -51,7 +51,7 @@ namespace testClient
         }
 
         /// <summary>
-        /// 通过FormMain中ProcessTalk调用，由传来的msg消息更新聊天窗口的richTextBox1
+        /// 通过FormMain中ProcessPersonalMsg调用，由传来的msg消息更新聊天窗口的richTextBox1
         /// </summary>
         /// <param name="msg"></param>
         public void updatemsg(byte[] msg)
@@ -91,7 +91,7 @@ namespace testClient
 
                     string ALL = Encoding.Unicode.GetString(all, 0, all.Length);
                     ALL = ALL.Insert(0, "[talk][" + mynum + "," + hisnum + "]");
-                    myInfo.ChildFromMsg = ALL; //发送文本
+                    myInfo.MsgReadyToBeSentToServer = ALL; //发送文本
 
                     //将发送框内容显示到对话框中
                     richTextBox1.AppendText(myname + " " + DateTime.Now.ToLongTimeString() + ":\n" + richTextBox2.Text + Environment.NewLine);

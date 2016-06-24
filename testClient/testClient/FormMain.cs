@@ -15,34 +15,23 @@ using CCWin.SkinClass;
 using CCWin.SkinControl;
 using System.Threading;
 using System.Text.RegularExpressions;
-
-/*
- * private void timer1_Tick(object sender, EventArgs e) 启动FormMain时与服务器连接，之后每隔100ms向服务器发送客户端产生的信息
- * public void SendMsg(string msg)
- * public void SendMsg(byte[] msg) 
- * public void ReceiveMsg(IAsyncResult result)
- * public void ProcessTalk(string nums, string mymsg)
- * private void sideBar1_ItemDoubleClick(Aptech.UI.SbItemEventArgs e)
- * public void myupdate(string msg)
- */
+using System.Net;
 
 
 namespace testClient
 {
     public partial class FormMain : CCSkinMain
     {
-        public static string Pmynum;
-
         TcpClient myclient;
         NetworkStream networkStream;
         byte[] buffer; //缓存接收到和要发送的信息
         int size = 8192;
 
-        private SplitMsg MsgHandle;//处理收到的字符
+        private SplitMsg MsgHandler;//处理收到的字符
         public delegate void updataMain(string msg);
         public Hashtable UserMsg = new Hashtable();
 
-        static int msgnums = 0;
+        static int ballonMsgNum = 0; 
         private delegate void Showicon(int i);
         private bool ShowIcon;
         /// <summary>
@@ -50,6 +39,9 @@ namespace testClient
         /// </summary>
         private int IconMode;
 
+        public delegate void PersonalMsgEventHandler(string fromuser, string mymsg);//委托私聊消息发送操作
+        public delegate void LoginEventHandler(string msg);//委托登陆操作
+        public delegate void GroupMsgEventHandler(string groupnum, string msg);//委托群组消息发送操作
 
         static AutoResetEvent myResetEvent = new AutoResetEvent(false);
         static string share;
@@ -61,23 +53,43 @@ namespace testClient
         }
 
         /// <summary>
-        /// 加载窗体，设置sideBar的分组
+        /// 启动FormMain时与服务器连接进行登录
         /// </summary>
         /// <param name="sender"></param>
         /// <param name="e"></param>
         private void FormMain_Load(object sender, EventArgs e)
         {
-            MsgHandle = new SplitMsg();
-        }
+            MsgHandler = new SplitMsg();
 
-        private void sideBar1_MouseDown(object sender, MouseEventArgs e)
-        {
+            /*与服务器连接*/
+            IPAddress Ip = IPAddress.Parse("127.0.0.1");
+            int Port = 2333;
+            IPEndPoint EndPoint = new IPEndPoint(Ip, Port);
+            myclient = new TcpClient();
+            myclient.Connect(EndPoint);
+
+            /*获得网络流*/
+            networkStream = myclient.GetStream();
+            buffer = new byte[size];
+
+            // FormLogin点击登录后myInfo.Login = "[login][account,pwd]", 如[login][10151100,pass]
+            string loginRequest = myInfo.Login;
+
+            /*发送信息(登录信息)*/
+            SendMsg(loginRequest);
+
+            /* 异步读取服务器反馈信息*/
+            lock (networkStream)
+            {
+                AsyncCallback asy = new AsyncCallback(ReceiveMsg);
+                networkStream.BeginRead(buffer, 0, size, asy, null);
+            }
 
         }
 
 
         /// <summary>
-        /// 启动FormMain时与服务器连接进行登录，之后每隔100ms向服务器发送客户端产生的信息
+        /// 每隔50ms向服务器发送客户端产生的信息
         /// </summary>
         /// <param name="sender"></param>
         /// <param name="e"></param>
@@ -85,36 +97,10 @@ namespace testClient
         {
             try
             {
-                if (myInfo.Login != null)//登录操作只执行一次
+                if (myInfo.MsgReadyToBeSentToServer != string.Empty)//各窗体中有消息需要发送给服务器
                 {
-                    // FormLogin点击登录后myInfo.Login = "[login][account,pwd]", 如[login][10151100,pass]
-                    string temp = myInfo.Login;
-                    myInfo.Login = null; //登录只执行一次，但timer不断在运行，所以执行过一次后置空
-
-                    /*与服务器连接*/
-                    myclient = new TcpClient();
-                    myclient.Connect("127.0.0.1", 500);
-                    //myclient.Connect("10.146.93.17",500);
-
-                    /*获得网络流*/
-                    networkStream = myclient.GetStream();
-                    buffer = new byte[size];
-
-                    /*发送信息(登录信息)*/
-                    SendMsg(temp);
-
-                    /* 异步读取服务器反馈信息*/
-                    lock (networkStream)
-                    {
-                        AsyncCallback asy = new AsyncCallback(ReceiveMsg);
-                        networkStream.BeginRead(buffer, 0, size, asy, null);
-                    }
-                }
-
-                if (myInfo.ChildFromMsg != string.Empty)//表示有消息从子窗体中传过来
-                {
-                    string temp = myInfo.ChildFromMsg;//赋给临时变量
-                    myInfo.ChildFromMsg = string.Empty;//清空，方便再次有消息传过来
+                    string temp = myInfo.MsgReadyToBeSentToServer;//赋给临时变量
+                    myInfo.MsgReadyToBeSentToServer = string.Empty;//清空，方便再次有消息传过来
 
                     SendMsg(temp);//发送消息
                 }
@@ -122,36 +108,26 @@ namespace testClient
             }
             catch (Exception ex)
             {
-                MessageBox.Show("timer1控件: " + ex.Message);
+                //MessageBox.Show(ex.Message);
                 timer1.Stop();
             }
         }
 
         /// <summary>
-        /// 发送字符串型消息
+        /// 发送消息，字符串转字节写入网络流
         /// </summary>
         /// <param name="msg"></param>
         public void SendMsg(string msg)
         {
             msg += "[e]"; //末尾设置分隔符
-            byte[] tempmsg = Encoding.Unicode.GetBytes(msg);
+            byte[] bytes = Encoding.Unicode.GetBytes(msg);
             /*写入网络流，并刷新*/
-            networkStream.Write(tempmsg, 0, tempmsg.Length);
+            networkStream.Write(bytes, 0, bytes.Length);
             networkStream.Flush();
         }
 
         /// <summary>
-        /// 发送字节型消息(文本中含有图片时调用)
-        /// </summary>
-        /// <param name="msg"></param>
-        public void SendMsg(byte[] msg)//特殊
-        {
-            networkStream.Write(msg, 0, msg.Length);
-            networkStream.Flush();
-        }
-
-        /// <summary>
-        /// 接收服务器发回消息
+        /// 接收服务器的各种请求并作出相应处理
         /// </summary>
         /// <param name="result"></param>
         public void ReceiveMsg(IAsyncResult result)
@@ -164,57 +140,60 @@ namespace testClient
                 {
                     readbytes = networkStream.EndRead(result);
                 }
-                if (readbytes < 1) //
+                if (readbytes <= 0) //若出现传输字节为0时不做处理
                 {
-                    MessageBox.Show("读取信息时异常");
+                    //
                 }
                 else //正常接收信息
                 {
-                    /*将所读字节数组buffer解码为string，赋给Readmsg*/
+                    //将字节数组buffer解码为字符串，并清空buffer以便接收下一条由服务器传来的信息
                     string Readmsg = Encoding.Unicode.GetString(buffer, 0, readbytes);
                     Array.Clear(buffer, 0, buffer.Length);//清空缓存
 
                     //MessageBox.Show("client: \n" + Readmsg);
 
                     /*处理所得的Readmsg*/
-
+                    //因离线消息有两个前缀([off],[talk])，所以先判断是否是离线消息 ([off]开头，包含私聊离线消息和群组离线消息)
+                    //若是，则将其按群组和私聊分类然后按类别重组
                     if (Readmsg.StartsWith("[off]"))
                     {
                         /*离线消息归类*/
                         /*
                          * [off][talk][101511]Shane 22:59:03:\nhello[e][talk][100001]Alice 22:59:30: Hi[e][talk][101511]Shane 22:59:42: FromShane[e]
                          * 分成
-                         * ClassfiedMsg[0] = "[talk][101511]Shane 22:59:03:\nhello\nShane 22:59:42:\nFromShane\n"
-                         * ClassfiedMsg[1] = "[talk][100001]Alice 22:59:30:\nHi\n"
+                         * ClassfiedMsgList[0] = "[talk][101511]Shane 22:59:03:\nhello\nShane 22:59:42:\nFromShane\n"
+                         * ClassfiedMsgList[1] = "[talk][100001]Alice 22:59:30:\nHi\n"
                          */
                         string[] LeftMsg = new string[100];
 
                         //归类
-                        Regex reg_account = new Regex(@"\d{6}");
+                        Regex reg_account = new Regex(@"\d{6}"); //最先找到的6位数即为消息发送者的账号
                         Match m = reg_account.Match(Readmsg);
 
 
-                        List<string> RawMsg = new List<string>();
-                        string rawmsg = Readmsg.Substring(5);
+                        List<string> RawMsgList = new List<string>();
+                        string rawmsg = Readmsg.Substring(5); //去掉[off]
+
                         //MessageBox.Show(rawmsg);
                         int splitindex = rawmsg.IndexOf("[e]");
                         while (splitindex != -1)
                         {
-                            RawMsg.Add(rawmsg.Substring(0, splitindex));
+                            RawMsgList.Add(rawmsg.Substring(0, splitindex));
                             //MessageBox.Show(rawmsg.Substring(0,splitindex));
                             rawmsg = rawmsg.Substring(splitindex + 3);
                             splitindex = rawmsg.IndexOf("[e]");
                         }
 
                         /*
-                         RawMsg[0] = "[talk][101511]Shane 22:59:03:\nhello" 
-                         RawMsg[1] = "[talk][100001]Alice 22:59:30:\nHi" 
-                         RawMsg[2] = "[talk][101511]Shane 22:59:42:\nFromShane"
+                         RawMsgList[0] = "[talk][101511]Shane 22:59:03:\nhello" 
+                         RawMsgList[1] = "[talk][100001]Alice 22:59:30:\nHi" 
+                         RawMsgList[2] = "[talk][101511]Shane 22:59:42:\nFromShane"
                          */
 
+                        //按类别重组
                         int index = 0;
-                        List<string> ClassfiedMsg = new List<string>();
-                        foreach (string singlemsg in RawMsg)
+                        List<string> ClassfiedMsgList = new List<string>();
+                        foreach (string singlemsg in RawMsgList)
                         {
                             int flag = 0;
                             string account = singlemsg.Substring(7, 6);
@@ -227,7 +206,7 @@ namespace testClient
 
                                     string onemsg = singlemsg.Substring(14) + "\n"; //Shane 22:59:03:\nhello\n
 
-                                    ClassfiedMsg[pos] += onemsg;
+                                    ClassfiedMsgList[pos] += onemsg;
 
                                     //MessageBox.Show("found: " + ClassfiedMsg[pos]);
 
@@ -238,30 +217,34 @@ namespace testClient
                                 //singlemsg = "[talk][101511]Shane 22:59:03:\nhello" 
                                 UserMsg.Add(account, index);
                                 string onemsg = singlemsg + "\n";
-                                ClassfiedMsg.Insert(index, onemsg);
+                                ClassfiedMsgList.Insert(index, onemsg);
 
                                 //MessageBox.Show("First time: " + onemsg);
                                 index++;
                             }
                         }
 
-                        foreach (string leftmsg in ClassfiedMsg)
+                        foreach (string leftmsg in ClassfiedMsgList)
                         {
-                            string nums = leftmsg.Substring(7, 6); //发送者id
+                            string fromuser = leftmsg.Substring(7, 6); //发送者id
+                            MessageBox.Show(fromuser);
                             string mymsg = leftmsg.Substring(14); //msg
                             //mymsg = "Shane 22:59:03:\nhello\nShane 22:59:42:\nFromShane\n"
-                            this.ProcessTalk(nums, mymsg);
+                            this.ProcessPersonalMsg(fromuser, mymsg);
                         }
 
 
-                    } //if离线消息
-                    else
+                    } 
+                    else //不是离线消息
                     {
-                        MsgHandle.MSG = Readmsg;
-                        string[] AllMsg = MsgHandle.process();
-                        if (AllMsg.Length != 0)
+                        //按[e]切分消息
+                        MsgHandler.MSG = Readmsg;
+                        string[] splittedMsg = MsgHandler.process();
+
+                        //依次处理分隔后的每一条的消息
+                        if (splittedMsg.Length != 0)
                         {
-                            foreach (string msg in AllMsg)
+                            foreach (string msg in splittedMsg)
                             {
                                 //MessageBox.Show(msg);
                                 if (msg.StartsWith("[login_successful]"))//登陆成功
@@ -282,31 +265,38 @@ namespace testClient
                                       * </Info>
                                    */
 
-                                    string temp = msg.Substring(18);
-                                    /*更新窗体，载入好友列表**/
-                                    this.Invoke(new updataMain(myupdate), new object[] { temp });
+                                    string temp = msg.Substring(18); //去掉前缀
+
+                                    /*更新窗体，载入好友和群组列表**/
+                                    LoginEventHandler handlelogin = new LoginEventHandler(LoadMyInfo);
+                                    handlelogin.BeginInvoke(temp, null, null);
+
                                 }
                                 else if (msg.StartsWith("login_failed")) //登陆失败
                                 {
                                     
                                 }
-                                else if (msg.StartsWith("[talk]")) //会话请求
+                                else if (msg.StartsWith("[talk]")) //私聊会话请求
                                 {
                                     //101511发给253841信息:hello，则msg = "[talk][101511]Shane 18:33:59:\nhello"
                                     //此处客户端为253841所打开的客户端
-                                    string nums = msg.Substring(7, 6); //发送者id
+                                    string fromuser = msg.Substring(7, 6); //发送者id
                                     string mymsg = msg.Substring(14); //msg
 
-                                    this.ProcessTalk(nums, mymsg);
+                                    PersonalMsgEventHandler personalchatHandler = new PersonalMsgEventHandler(ProcessPersonalMsg);
+                                    personalchatHandler.BeginInvoke(fromuser, mymsg, null, null);
+
                                 }
-                                else if (msg.StartsWith("[group]"))
+                                else if (msg.StartsWith("[group]")) //群组聊天请求
                                 {
                                     //MessageBox.Show("1 --- " + msg);
                                     //101511向群组000001发送信息:hello，则msg = "[group][000001]Shane 18:34:09:\hello"
-                                    string groupid = msg.Substring(8, 6);
+                                    string groupnum = msg.Substring(8, 6);
                                     string groupmsg = msg.Substring(15); //Shane 18:34:09:\hello
 
-                                    this.ProcessGroupMsg(groupid, groupmsg);
+                                    GroupMsgEventHandler groupchatHandler = new GroupMsgEventHandler(ProcessGroupMsg);
+                                    groupchatHandler.BeginInvoke(groupnum, groupmsg, null, null);
+
                                 }
                             }
                         }
@@ -325,150 +315,200 @@ namespace testClient
             }
         }
 
+
+        int ballontime = 0; //记录气球消息的次数，第一次的时候除消息外需要加前缀[msg]，姓名和头像索引，之后只加消息本身
+        string ballonMsg = string.Empty; //气球消息
+
         /// <summary>
-        /// 处理收到聊天的信息
+        /// 处理收到的私聊信息
         /// </summary>
         /// <param name="nums"></param>
         /// <param name="mymsg"></param>
-        public void ProcessTalk(string nums, string mymsg)
+        public void ProcessPersonalMsg(string fromuser, string mymsg)
         {
             // Shane在18:33:59给Bryan发"hello",则Shane向服务器发送msg = "[talk][101511,253841]Shane 18:33:59:\nhello",
-            // Bryan收到的msg = "[talk][101511]Shane 18:33:59:\nhello", nums="101511", mymsg="Shane 18:33:59:\nhello"
-            //MessageBox.Show("nums="+nums+"msg"+mymsg);
-            string name = "";
-            int img = 0;
-            bool chatformisopen = false;//表示是否有该窗体
+            // Bryan收到的msg = "[talk][101511]Shane 18:33:59:\nhello", fromuser="101511", mymsg="Shane 18:33:59:\nhello"
+            //MessageBox.Show("fromuser="+fromuser+"msg"+mymsg);
+
+            string fromuser_name = string.Empty; //发送者fromuser的昵称
+            int fromuser_header = 0; //发送者fromuser的头像索引
+            bool formChatIsOpen = false;//判断和fromuser的聊天窗口是否已打开，若是则更新窗体，否则显示到托盘
             byte[] msgbyte = Encoding.Unicode.GetBytes(mymsg);//转成byte
 
-            //要从sidebar中搜索，获取nums的头像，昵称，如果没有就直接用num开启聊天窗口
-            //如果窗口没打开，显示在托盘
-            for (int i = 0; i < 1; i++)
+            //遍历clb_friend，获取fromuser的昵称和头像索引
+            for (int i = 0; i < 1; i++) //找clb_friend的第一个组(我的好友)
             {
                 for (int j = 0; j < clb_friend.Items[i].SubItems.Count; j++)
                 {
-                    if (clb_friend.Items[i].SubItems[j].Tag.ToString() == nums) //通过发送者账号获得发送者昵称
+                    if (clb_friend.Items[i].SubItems[j].Tag.ToString() == fromuser) //通过发送者账号获得发送者昵称
                     {
-                        name = clb_friend.Items[i].SubItems[j].NicName;
-                        img = (int)clb_friend.Items[i].SubItems[j].ID;
-                        //MessageBox.Show(name);
+                        fromuser_name = clb_friend.Items[i].SubItems[j].NicName;
+                        fromuser_header = (int)clb_friend.Items[i].SubItems[j].ID;
                     }
                 }
             }
 
-            //MessageBox.Show("process");
             //查找聊天窗口是否有打开
             foreach (DictionaryEntry chats in myInfo.ChatForm)
             {
-                if (chats.Key.ToString() == nums)//有该窗体存在
+                //窗口已打开，则更新窗口
+                if (chats.Key.ToString() == fromuser)
                 {
-                    //MessageBox.Show("process1");
-                    chatformisopen = true;
+                    formChatIsOpen = true;
                     //更新聊天窗口中消息信息
                     ((FormChat)chats.Value).BeginInvoke(new UpdateChat(((FormChat)chats.Value).updatemsg), new object[] { msgbyte });
                 }
             }
 
-            //窗口未打开
-            if (!chatformisopen)//显示到托盘
+            //窗口未打开，则显示到托盘
+            if (!formChatIsOpen)
             {
-                //把消息打包
-                //allmsgs = "[msg]101511,Shane,5,Shane 18:33:59:\nhello"
+                //离线消息: mymsg = "Shane 12:44:50:\nhello\nShane 12:45:08:\nHi[e][talk][100001]\nShane\n12:46:00:\nFromShaneAgain\n"
+                //balloon = "[msg]101511,Shane,5,Shane 12:44:50:\nhello\nShane 12:45:08:\nHi[e][talk][100001]\nShane\n12:46:00:\nFromShaneAgain\n"
+                
+                string balloon = string.Empty; //每次的气球消息
 
-                //离线: mymsg = Shane 12:44:50:\nhello\nShane 12:45:08:\nHi[e][talk][100001]\nShane\n12:46:00:\nFromShaneAgain\n
-                //[msg]101511],5,Shane 12:44:50:\nhello\nShane 12:45:08:\nHi[e][talk][100001]\nShane\n12:46:00:\nFromShaneAgain\n
-                string allmsgs = "[msg]" + nums + "," + name + "," + img.ToString() + "," + mymsg;
-                this.BeginInvoke(new Showicon(myshow), new object[] { 6 }); //委托，托盘图标闪烁
+                if (ballontime == 0) //第一次时加前缀，之后只处理消息本身
+                {
+                    balloon = "[msg]" + fromuser + "," + fromuser_name + "," + fromuser_header.ToString() + "," + mymsg;
+                    ballontime = 1; //在显示了聊天窗体后再置0
+                }
+                else
+                {
+                    balloon = mymsg;
+                    ballontime = 1;
+                }
 
-                updataMain handle = new updataMain(OnebyOne);
-                handle.BeginInvoke(allmsgs, null, null);
-                msgnums++;
+                this.BeginInvoke(new Showicon(startBallonTimer), new object[] { 6 }); //委托，托盘图标闪烁
+
+
+                updataMain handler = new updataMain(ProcessBallonMsg);
+                handler.BeginInvoke(balloon, null, null);
+                ballonMsgNum++;
+
             }
             
         }
 
-        public void ProcessGroupMsg(string groupid, string groupmsg)
+        /// <summary>
+        /// 处理收到的群组消息
+        /// </summary>
+        /// <param name="groupnum"></param>
+        /// <param name="groupmsg"></param>
+        public void ProcessGroupMsg(string groupnum, string groupmsg)
         {
             // Shane在18:33:59给群组1发"hello",则Shane向服务器发送msg = "[talk][101511,000001]Shane 18:33:59:\nhello",
             // Bryan收到的msg = "[group][000001]Shane 18:33:59:\nhello", groupid="000001", groupmsg="Shane 18:33:59:\nhello"
 
-            string name = "";
-            int img = 0;
-            bool groupchatformisopen = false;//表示是否有该窗体
+            string group_name = string.Empty;
+            int group_header = 0;
+            bool groupChatIsOpen = false;//表示是否有该窗体
             byte[] msgbyte = Encoding.Unicode.GetBytes(groupmsg);//转成byte
 
-            //要从clb_group中搜索，获取groupid的header，name
-            //如果窗口没打开，显示在托盘
+            //遍历clb_friend，获取groupnum的名称和头像索引
             for (int i = 0; i < 1; i++)
             {
                 for (int j = 0; j <  clb_group.Items[i].SubItems.Count; j++)
                 {
-                    if (clb_group.Items[i].SubItems[j].Tag.ToString() == groupid) //通过发送者账号获得发送者昵称
+                    if (clb_group.Items[i].SubItems[j].Tag.ToString() == groupnum) 
                     {
-                        name = clb_group.Items[i].SubItems[j].NicName;
-                        img = (int)clb_group.Items[i].SubItems[j].ID;
-                        //MessageBox.Show(name);
+                        group_name = clb_group.Items[i].SubItems[j].NicName;
+                        group_header = (int)clb_group.Items[i].SubItems[j].ID;
                     }
                 }
             }
 
-            //MessageBox.Show("process");
             //查找聊天窗口是否有打开
             foreach (DictionaryEntry groupchats in myInfo.GroupChatForm)
             {
-                if (groupchats.Key.ToString() == groupid)//有该窗体存在
+                if (groupchats.Key.ToString() == groupnum)//有该窗体存在
                 {
                     //MessageBox.Show("processGroupMsg");
-                    groupchatformisopen = true;
+                    groupChatIsOpen = true;
                     //更新聊天窗口中消息信息
                     ((GroupChat)groupchats.Value).BeginInvoke(new UpdateChat(((GroupChat)groupchats.Value).updatemsg), new object[] { msgbyte });
                 }
             }
 
-            //窗口未打开
-            if (!groupchatformisopen)//显示到托盘
+            //窗口未打开，将消息显示到托盘气球
+            if (!groupChatIsOpen)
             {
-                //把消息打包
-                //allmsgs = "[msg]101511,Shane,5,Shane 18:33:59:\nhello"
+                //balloonMsg =  "[msg]000001,Programming,2,Shane 12:44:50:\nhello\nAlice 12:45:23:\nHi\n"
+                //string balloonMsg = "[msg]" + groupnum + "," + group_name + "," + group_header.ToString() + "," + groupmsg;
 
-                //msg = [msg]101511,Shane,5,Shane 12:44:50:\nhello\nShane 12:45:08:\nHi[e][talk][100001]\nShane\n12:46:00:\nFromShaneAgain\n
-                
-                //群组: [msg]000001,Programming,2,Shane 12:44:50:\nhello\nAlice 12:45:23:\nHi\n
-                string allmsgs = "[msg]" + groupid + "," + name + "," + img.ToString() + "," + groupmsg;
-                this.BeginInvoke(new Showicon(myshow), new object[] { 6 }); //委托，托盘图标闪烁
+                string balloon = string.Empty;
 
-                updataMain handle = new updataMain(OnebyOne);
-                handle.BeginInvoke(allmsgs, null, null);
-                msgnums++;
+                if (ballontime == 0) //第一次时加前缀，之后只处理消息本身
+                {
+                    balloon = "[msg]" + groupnum + "," + group_name + "," + group_header.ToString() + "," + groupmsg;
+                    ballontime = 1;
+                }
+                else
+                {
+                    balloon = groupmsg;
+                    ballontime = 1;
+                }
+
+                this.BeginInvoke(new Showicon(startBallonTimer), new object[] { 6 }); //委托，托盘图标闪烁
+
+                updataMain handler = new updataMain(ProcessBallonMsg);
+                handler.BeginInvoke(balloon, null, null);
+                ballonMsgNum++;
             }
         
         }
 
 
-        public void OnebyOne(string msg)
+        /// <summary>
+        /// 处理托盘气球消息
+        /// </summary>
+        /// <param name="msg"></param>
+        public void ProcessBallonMsg(string msg)
         {
-            myResetEvent.WaitOne(); //阻塞当前线程,直到收到信号(点击托盘图标时发送解锁信号)
+            ballonMsg += msg + '\n';
+            myResetEvent.WaitOne(); //P, 阻塞当前线程,直到收到信号(点击托盘图标时发送解锁信号)
 
-            share = msg;
-            if (share.StartsWith("[msg]"))//有人发来消息
-            {
-                //[msg]num,name,img,msg
-                this.BeginInvoke(new updataMain(ShowFormChat), new object[] { msg });
-            }
-            msgnums--;
+            //MessageBox.Show("ballon:\n " + ballonMsg);
+
+            this.BeginInvoke(new updataMain(ShowFormChat), new object[] { ballonMsg });
+
+            ballonMsgNum--; 
         }
 
+
+        /// <summary>
+        /// 点击气球图标，解锁线程
+        /// </summary>
+        /// <param name="sender"></param>
+        /// <param name="e"></param>
+        private void notifyIcon1_Click(object sender, EventArgs e)
+        {
+            if (ballonMsgNum > 0)
+            {
+                myResetEvent.Set(); // V，解锁当前线程
+                if (ballonMsgNum == 1)
+                {
+                    timer2.Stop();
+                }
+            }
+        }
+
+
+        /// <summary>
+        /// 点击气球后显示聊天界面
+        /// </summary>
+        /// <param name="msg"></param>
         public void ShowFormChat(string msg)
         {
             //msg = "[msg]101511,Shane,5,Shane 18:33:59:\nhello,hi"
-            //离线:msg = [msg]101511,Shane,5,Shane 12:44:50:\nhello\nShane 12:45:08:\nHi[e][talk][100001]\nShane\n12:46:00:\nFromShaneAgain\n
-            
-            /*这里消息截图需要改，消息中含逗号时会被误分*/
-            string[] alltemp = share.Substring(5).Split(',');
-            byte[] mymsg = Encoding.Unicode.GetBytes(alltemp[3]);
+            //msg = [msg]101511,Shane,5,Shane 12:44:50:\nhello\nShane 12:45:08:\nHi[e][talk][100001]\nShane\n12:46:00:\nFromShaneAgain\n
 
-            if (int.Parse(alltemp[0]) >= 100000) //用户消息
+            string[] splitInfo = msg.Substring(5).Split(','); //去掉[msg]后按逗号分隔
+            byte[] mymsg = Encoding.Unicode.GetBytes(splitInfo[3]);
+
+            if (int.Parse(splitInfo[0]) >= 100000) //用户消息
             {
-                FormChat mychat = new FormChat(this.pictureBox1.Tag.ToString(), alltemp[0], label1.Text, alltemp[1], int.Parse(alltemp[2]));
+                FormChat mychat = new FormChat(this.pictureBox1.Tag.ToString(), splitInfo[0], label1.Text, splitInfo[1], int.Parse(splitInfo[2]));
                 mychat.Show();
                 mychat.BeginInvoke(new UpdateChat(mychat.updatemsg), new object[] { mymsg });
             }
@@ -476,20 +516,23 @@ namespace testClient
             {
                 //[msg]000001,Programming,2,Shane 12:44:50:\nhello\nAlice 12:45:23:\nHi\n
                 //获取群组的所有用户
-                GroupChat groupchat = new GroupChat(this.pictureBox1.Tag.ToString(), alltemp[0], label1.Text, alltemp[1], int.Parse(alltemp[2]));
+                GroupChat groupchat = new GroupChat(this.pictureBox1.Tag.ToString(), splitInfo[0], label1.Text, splitInfo[1], int.Parse(splitInfo[2]));
                 groupchat.Show();
                 groupchat.BeginInvoke(new UpdateChat(groupchat.updatemsg), new object[] { mymsg });
                 
-
             }
+
+            //显示聊天窗体后清空气球消息和重置第一次气球消息标志
+            ballonMsg = string.Empty; 
+            ballontime = 0;
 
         }
 
 
-        /*myshow, timer2_Tick, ShowIconMode三个方法实现在托盘的图标闪烁*/
-        /// <summary>显示相应的托盘图标</summary>
+        /*startBallonTimer, timer2_Tick, ShowIconMode三个方法实现在托盘的图标闪烁*/
+        /// <summary>开始timer2，闪烁气球图标</summary>
         /// <param name="i"></param>
-        public void myshow(int i)
+        public void startBallonTimer(int i)
         {
             if (this.timer2.Enabled)
             {
@@ -504,49 +547,33 @@ namespace testClient
 
         private void timer2_Tick(object sender, EventArgs e)
         {
-            if (IconMode == 6)//有人Q你
+            // 通过ShowIcon的切换来实现图标(两个，一大一小)闪烁效果
+            if (ShowIcon)
             {
-                // 通过ShowIcon的切换来实现图标(两个，一大一小)闪烁效果
-                if (ShowIcon)
-                {
-                    ShowIcon = false;
-                    this.ShowIconModel(6);
-                }
-                else
-                {
-                    ShowIcon = true;
-                    this.ShowIconModel(7);
-                }
+                ShowIcon = false;
+                this.SwitchIconImage(1);
             }
+            else
+            {
+                ShowIcon = true;
+                this.SwitchIconImage(2);
+            }
+
         }
 
-        private void ShowIconModel(int ShowMode)//显示图标
+        /// <summary>
+        /// 切换气球图像实现闪烁
+        /// </summary>
+        /// <param name="ShowMode"></param>
+        private void SwitchIconImage(int ShowMode)
         {
             switch (ShowMode)
             {
-                case 1://登陆后显示正常图标
-                    this.notifyIcon1.Icon = Icon.ExtractAssociatedIcon(Application.StartupPath + "\\myico\\App.ico");
-                    break;
-                case 2://有系统消息来
-                    this.notifyIcon1.Icon = Icon.ExtractAssociatedIcon(Application.StartupPath + "\\myico\\MsgManagerButton.ico");
-                    break;
-                case 3://登陆前显示向左图标
-                    this.notifyIcon1.Icon = Icon.ExtractAssociatedIcon(Application.StartupPath + "\\myico\\2.ico");
-                    break;
-                case 4://登陆前显示向右图标
-                    this.notifyIcon1.Icon = Icon.ExtractAssociatedIcon(Application.StartupPath + "\\myico\\1.ico");
-                    break;
-                case 5://显示离线图片
-                    this.notifyIcon1.Icon = Icon.ExtractAssociatedIcon(Application.StartupPath + "\\myico\\left.ico");
-                    break;
-                case 6://显示有人Q你
+                case 1://消息闪动图像1
                     this.notifyIcon1.Icon = Icon.ExtractAssociatedIcon(Application.StartupPath + "\\myico\\f1.ico");
                     break;
-                case 7://显示有人Q你
+                case 2://消息闪动图像2
                     this.notifyIcon1.Icon = Icon.ExtractAssociatedIcon(Application.StartupPath + "\\myico\\f2.ico");
-                    break;
-                case 8://有系统消息来
-                    this.notifyIcon1.Icon = Icon.ExtractAssociatedIcon(Application.StartupPath + "\\myico\\system.ico");
                     break;
             }
         }
@@ -555,21 +582,6 @@ namespace testClient
         {
             this.Activate();
         }
-
-        //点击托盘的消息图标
-        private void notifyIcon1_Click(object sender, EventArgs e)
-        {
-            if (msgnums > 0)
-            {
-                myResetEvent.Set();
-                if (msgnums == 1)
-                {
-                    timer2.Stop();
-                    ShowIconModel(1);
-                }
-            }
-        }
-
 
         /// <summary>
         /// 双击好友项时弹出聊天窗口
@@ -618,7 +630,12 @@ namespace testClient
             }
         }
 
-
+        /// <summary>
+        /// 双击群组项时弹出群组聊天窗口
+        /// </summary>
+        /// <param name="sender"></param>
+        /// <param name="e"></param>
+        /// <param name="es"></param>
         private void clb_group_DoubleClickSubItem(object sender, ChatListEventArgs e, MouseEventArgs es)
         {
             // Tag 为群组号
@@ -631,19 +648,19 @@ namespace testClient
 
             string num = item.Tag.ToString(); //000001
 
-            bool isshow = false;
+            bool isOpen = false;
             // 若已经打开了与被选中对象的聊天窗口，则给焦点激活
             foreach (DictionaryEntry mygroupchat in myInfo.GroupChatForm)
             {
                 if (mygroupchat.Key.ToString() == num)
                 {
-                    isshow = true;
+                    isOpen = true;
                     ((FormChat)mygroupchat.Value).Activate();
                 }
             }
 
             // 若没有打开过与该对象的聊天窗口，则构造窗口并显示
-            if (!isshow)
+            if (!isOpen)
             {
                 //获取自己的账号id
                 string mynum = pictureBox1.Tag.ToString();
@@ -665,7 +682,7 @@ namespace testClient
         /// 由xml形式的字符串加载自己的信息和好友资料
         /// </summary>
         /// <param name="msg"></param>
-        public void myupdate(string msg)
+        public void LoadMyInfo(string msg)
         {
             /* Xml基础操作:
              *  XmlDocument xmlDoc = new XmlDocument();   //创建XmlDocument对象 
@@ -719,7 +736,6 @@ namespace testClient
                         pictureBox1.Image = Image.FromFile(Application.StartupPath + "\\image\\" + imageindex.ToString() + ".jpg");
                         pictureBox1.Tag = (object)myaccount; //101511
 
-                        FormMain.Pmynum = pictureBox1.Tag.ToString();
                     }
 
                 }

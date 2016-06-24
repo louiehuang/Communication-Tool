@@ -8,7 +8,6 @@ E:\DataBase\ProjectChat\testClient\testClient\obj\x86\Debug\testClient.pdb
 E:\DataBase\ProjectChat\testClient\testClient\obj\x86\Debug\testClient.FormMain.resources
 E:\DataBase\ProjectChat\testClient\testClient\obj\x86\Debug\testClient.FormChat.resources
 E:\DataBase\ProjectChat\testClient\testClient\obj\x86\Debug\testClient.FormLogin.resources
-E:\DataBase\ProjectChat\testClient\testClient\obj\x86\Debug\testClient.csprojResolveAssemblyReference.cache
 E:\DataBase\ProjectChat\testClient\testClient\bin\Debug\testClient.exe.config
 E:\DataBase\ProjectChat\testClient\testClient\bin\Debug\CSkin.dll
 E:\DataBase\ProjectChat\testClient\testClient\obj\x86\Debug\testClient.GroupChat.resources
