@@ -31,7 +31,7 @@ namespace testClient
         public delegate void updataMain(string msg);
         public Hashtable UserMsg = new Hashtable();
 
-        static int msgnums = 0; 
+        static int ballonMsgNum = 0; 
         private delegate void Showicon(int i);
         private bool ShowIcon;
         /// <summary>
@@ -379,11 +379,12 @@ namespace testClient
                     ballontime = 1;
                 }
 
-                this.BeginInvoke(new Showicon(myshow), new object[] { 6 }); //委托，托盘图标闪烁
+                this.BeginInvoke(new Showicon(startBallonTimer), new object[] { 6 }); //委托，托盘图标闪烁
 
-                updataMain handle = new updataMain(ProcessBallonMsg);
-                handle.BeginInvoke(balloon, null, null);
-                msgnums++;
+
+                updataMain handler = new updataMain(ProcessBallonMsg);
+                handler.BeginInvoke(balloon, null, null);
+                ballonMsgNum++;
 
             }
             
@@ -448,15 +449,14 @@ namespace testClient
                     ballontime = 1;
                 }
 
-                this.BeginInvoke(new Showicon(myshow), new object[] { 6 }); //委托，托盘图标闪烁
+                this.BeginInvoke(new Showicon(startBallonTimer), new object[] { 6 }); //委托，托盘图标闪烁
 
-                updataMain handle = new updataMain(ProcessBallonMsg);
-                handle.BeginInvoke(balloon, null, null);
-                msgnums++;
+                updataMain handler = new updataMain(ProcessBallonMsg);
+                handler.BeginInvoke(balloon, null, null);
+                ballonMsgNum++;
             }
         
         }
-
 
 
         /// <summary>
@@ -472,19 +472,23 @@ namespace testClient
 
             this.BeginInvoke(new updataMain(ShowFormChat), new object[] { ballonMsg });
 
-            msgnums--; 
+            ballonMsgNum--; 
         }
 
-        //点击托盘的消息图标
+
+        /// <summary>
+        /// 点击气球图标，解锁线程
+        /// </summary>
+        /// <param name="sender"></param>
+        /// <param name="e"></param>
         private void notifyIcon1_Click(object sender, EventArgs e)
         {
-            if (msgnums > 0)
+            if (ballonMsgNum > 0)
             {
                 myResetEvent.Set(); // V，解锁当前线程
-                if (msgnums == 1)
+                if (ballonMsgNum == 1)
                 {
                     timer2.Stop();
-                    ShowIconModel(1);
                 }
             }
         }
@@ -497,14 +501,14 @@ namespace testClient
         public void ShowFormChat(string msg)
         {
             //msg = "[msg]101511,Shane,5,Shane 18:33:59:\nhello,hi"
-            //离线:msg = [msg]101511,Shane,5,Shane 12:44:50:\nhello\nShane 12:45:08:\nHi[e][talk][100001]\nShane\n12:46:00:\nFromShaneAgain\n
+            //msg = [msg]101511,Shane,5,Shane 12:44:50:\nhello\nShane 12:45:08:\nHi[e][talk][100001]\nShane\n12:46:00:\nFromShaneAgain\n
 
-            string[] alltemp = msg.Substring(5).Split(',');
-            byte[] mymsg = Encoding.Unicode.GetBytes(alltemp[3]);
+            string[] splitInfo = msg.Substring(5).Split(','); //去掉[msg]后按逗号分隔
+            byte[] mymsg = Encoding.Unicode.GetBytes(splitInfo[3]);
 
-            if (int.Parse(alltemp[0]) >= 100000) //用户消息
+            if (int.Parse(splitInfo[0]) >= 100000) //用户消息
             {
-                FormChat mychat = new FormChat(this.pictureBox1.Tag.ToString(), alltemp[0], label1.Text, alltemp[1], int.Parse(alltemp[2]));
+                FormChat mychat = new FormChat(this.pictureBox1.Tag.ToString(), splitInfo[0], label1.Text, splitInfo[1], int.Parse(splitInfo[2]));
                 mychat.Show();
                 mychat.BeginInvoke(new UpdateChat(mychat.updatemsg), new object[] { mymsg });
             }
@@ -512,21 +516,23 @@ namespace testClient
             {
                 //[msg]000001,Programming,2,Shane 12:44:50:\nhello\nAlice 12:45:23:\nHi\n
                 //获取群组的所有用户
-                GroupChat groupchat = new GroupChat(this.pictureBox1.Tag.ToString(), alltemp[0], label1.Text, alltemp[1], int.Parse(alltemp[2]));
+                GroupChat groupchat = new GroupChat(this.pictureBox1.Tag.ToString(), splitInfo[0], label1.Text, splitInfo[1], int.Parse(splitInfo[2]));
                 groupchat.Show();
                 groupchat.BeginInvoke(new UpdateChat(groupchat.updatemsg), new object[] { mymsg });
                 
             }
 
-            ballonMsg = string.Empty;
+            //显示聊天窗体后清空气球消息和重置第一次气球消息标志
+            ballonMsg = string.Empty; 
             ballontime = 0;
+
         }
 
 
-        /*myshow, timer2_Tick, ShowIconMode三个方法实现在托盘的图标闪烁*/
-        /// <summary>显示相应的托盘图标</summary>
+        /*startBallonTimer, timer2_Tick, ShowIconMode三个方法实现在托盘的图标闪烁*/
+        /// <summary>开始timer2，闪烁气球图标</summary>
         /// <param name="i"></param>
-        public void myshow(int i)
+        public void startBallonTimer(int i)
         {
             if (this.timer2.Enabled)
             {
@@ -541,49 +547,33 @@ namespace testClient
 
         private void timer2_Tick(object sender, EventArgs e)
         {
-            if (IconMode == 6)//有人Q你
+            // 通过ShowIcon的切换来实现图标(两个，一大一小)闪烁效果
+            if (ShowIcon)
             {
-                // 通过ShowIcon的切换来实现图标(两个，一大一小)闪烁效果
-                if (ShowIcon)
-                {
-                    ShowIcon = false;
-                    this.ShowIconModel(6);
-                }
-                else
-                {
-                    ShowIcon = true;
-                    this.ShowIconModel(7);
-                }
+                ShowIcon = false;
+                this.SwitchIconImage(1);
             }
+            else
+            {
+                ShowIcon = true;
+                this.SwitchIconImage(2);
+            }
+
         }
 
-        private void ShowIconModel(int ShowMode)//显示图标
+        /// <summary>
+        /// 切换气球图像实现闪烁
+        /// </summary>
+        /// <param name="ShowMode"></param>
+        private void SwitchIconImage(int ShowMode)
         {
             switch (ShowMode)
             {
-                case 1://登陆后显示正常图标
-                    this.notifyIcon1.Icon = Icon.ExtractAssociatedIcon(Application.StartupPath + "\\myico\\App.ico");
-                    break;
-                case 2://有系统消息来
-                    this.notifyIcon1.Icon = Icon.ExtractAssociatedIcon(Application.StartupPath + "\\myico\\MsgManagerButton.ico");
-                    break;
-                case 3://登陆前显示向左图标
-                    this.notifyIcon1.Icon = Icon.ExtractAssociatedIcon(Application.StartupPath + "\\myico\\2.ico");
-                    break;
-                case 4://登陆前显示向右图标
-                    this.notifyIcon1.Icon = Icon.ExtractAssociatedIcon(Application.StartupPath + "\\myico\\1.ico");
-                    break;
-                case 5://显示离线图片
-                    this.notifyIcon1.Icon = Icon.ExtractAssociatedIcon(Application.StartupPath + "\\myico\\left.ico");
-                    break;
-                case 6://显示有人Q你
+                case 1://消息闪动图像1
                     this.notifyIcon1.Icon = Icon.ExtractAssociatedIcon(Application.StartupPath + "\\myico\\f1.ico");
                     break;
-                case 7://显示有人Q你
+                case 2://消息闪动图像2
                     this.notifyIcon1.Icon = Icon.ExtractAssociatedIcon(Application.StartupPath + "\\myico\\f2.ico");
-                    break;
-                case 8://有系统消息来
-                    this.notifyIcon1.Icon = Icon.ExtractAssociatedIcon(Application.StartupPath + "\\myico\\system.ico");
                     break;
             }
         }
@@ -592,8 +582,6 @@ namespace testClient
         {
             this.Activate();
         }
-
-
 
         /// <summary>
         /// 双击好友项时弹出聊天窗口
@@ -660,19 +648,19 @@ namespace testClient
 
             string num = item.Tag.ToString(); //000001
 
-            bool isshow = false;
+            bool isOpen = false;
             // 若已经打开了与被选中对象的聊天窗口，则给焦点激活
             foreach (DictionaryEntry mygroupchat in myInfo.GroupChatForm)
             {
                 if (mygroupchat.Key.ToString() == num)
                 {
-                    isshow = true;
+                    isOpen = true;
                     ((FormChat)mygroupchat.Value).Activate();
                 }
             }
 
             // 若没有打开过与该对象的聊天窗口，则构造窗口并显示
-            if (!isshow)
+            if (!isOpen)
             {
                 //获取自己的账号id
                 string mynum = pictureBox1.Tag.ToString();
