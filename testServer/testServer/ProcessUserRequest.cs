@@ -70,9 +70,9 @@ namespace testServer
                     msgLength = networkStream.EndRead(result);
                 }
 
-                if (msgLength <= 0) //通常不会出现这种情况，若出现传输字节为0时不做处理
+                if (msgLength <= 0) //若出现传输字节为0时不做处理
                 {
-
+                    //
                 }
                 else
                 {
@@ -84,10 +84,10 @@ namespace testServer
                     MsgHandler.MSG = rawMsg; 
                     string[] splittedMsg = MsgHandler.process();
 
-
+                    //依次处理分隔后的每一条的消息
                     if (splittedMsg.Length != 0)
                     {
-                        foreach (string msg in splittedMsg) //依次处理分隔后的每一条的消息
+                        foreach (string msg in splittedMsg) 
                         {
                             //MessageBox.Show(msg);
                             if (msg.StartsWith("[login]"))//登陆请求
@@ -343,8 +343,8 @@ namespace testServer
         /// <param name="msg"></param>
         public void SendMsg(string msg)
         {
-            byte[] temp = Encoding.Unicode.GetBytes(msg);
-            networkStream.Write(temp, 0, temp.Length);
+            byte[] bytes = Encoding.Unicode.GetBytes(msg);
+            networkStream.Write(bytes, 0, bytes.Length);
             networkStream.Flush();
         }
 

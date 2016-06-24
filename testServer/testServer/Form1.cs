@@ -21,7 +21,7 @@ namespace testServer
 
         public static IPAddress Ip=IPAddress .Parse ("127.0.0.1");
         //public static IPAddress Ip = IPAddress.Parse("10.146.93.17");
-        public static int Port=500;
+        public static int Port=2333;
         public static IPEndPoint EndPoint = new IPEndPoint(Ip, Port);
 
         TcpListener myListener = new TcpListener(EndPoint);

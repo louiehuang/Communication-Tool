@@ -91,7 +91,7 @@ namespace testClient
 
                     string ALL = Encoding.Unicode.GetString(all, 0, all.Length);
                     ALL = ALL.Insert(0, "[group][" + mynum + "," + groupid + "]"); //[group][101511,000001]Shane 18:29:39:\nhello
-                    myInfo.ChildFromMsg = ALL; //发送文本
+                    myInfo.MsgReadyToBeSentToServer = ALL; //发送文本
 
                     //将发送框内容显示到对话框中
                     richTextBox1.AppendText(myname + " " + DateTime.Now.ToLongTimeString() + ":\n" + richTextBox2.Text + Environment.NewLine);
