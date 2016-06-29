@@ -100,6 +100,11 @@ namespace testClient
             this.cb_account.ForeColor = Color.Black;
         }
 
+        /// <summary>
+        /// 回车登陆
+        /// </summary>
+        /// <param name="sender"></param>
+        /// <param name="e"></param>
         private void rtb_pwd_KeyDown(object sender, KeyEventArgs e)
         {
             if (e.KeyCode == Keys.Enter)
@@ -111,6 +116,9 @@ namespace testClient
 
         private void skinButton1_Click(object sender, EventArgs e)
         {
+            FormRegister formRegister = new FormRegister();
+            formRegister.Show();
+
 
         }
 

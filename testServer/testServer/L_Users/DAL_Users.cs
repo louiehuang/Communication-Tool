@@ -143,6 +143,21 @@ namespace testServer
 
         }
 
+        public bool DAL_Users_Register(string account, string name, string pwd, int header, string gender, string sign, int age, int constellation, int blood)
+        {
+
+            string sql = string.Format("INSERT INTO Users (U_account, U_name, U_pwd, U_header, U_gender, U_signature, U_age, U_constellation, U_bloodtype) values ('{0}','{1}','{2}','{3}','{4}','{5}','{6}','{7}','{8}')",
+                    account, name, pwd, header, gender, sign, age, constellation, blood);
+
+            int line = conn.DBcmd(sql);
+
+            if (line == 1)
+                return true;
+            else
+                return false;
+
+        }
+
 
     }
 }

@@ -12,18 +12,16 @@ using CCWin.SkinControl;
 
 namespace testClient
 {
-    public delegate void UpdateGroupChat(byte[] msg);
+    public delegate void UpdateGroupChat(string msg);
+
     public partial class GroupChat : CCSkinMain
     {
         int imgindex;
-        public bool isalve = false;
-        string mynum;
-        string groupid;
-        //Bitmap bp;
-        byte[] b_mes = new byte[500];
-        //Image image;
-        string str = "";
-        byte[] all; ///////////////////???
+        string myAccount; //当前用户的账号
+        string groupid; //群组号
+
+        string sendToServerMsg; //发送给服务器的消息
+
         string myname; //我的昵称
         string groupname; //群组名称
 
@@ -32,36 +30,25 @@ namespace testClient
             InitializeComponent();
         }
 
-        public GroupChat(string mynum, string groupid, string myname, string groupname, int imageindex)
+        public GroupChat(string myAccount, string groupid, string myname, string groupname, int imageindex)
         {
             InitializeComponent();
-            this.mynum = mynum;
+            this.myAccount = myAccount;
             this.groupid = groupid;
             this.myname = myname;
             this.groupname = groupname;
             imgindex = imageindex;
-            isalve = true;
             myInfo.GroupChatForm.Add(groupid, this); //说明groupid的聊天界面已打开
         }
 
-        private byte[] mes(string s)                  //得到richtextbox2的文字字节数
-        {
-            byte[] b_mes = Encoding.Unicode.GetBytes(s);
-            return b_mes;
-        }
 
         /// <summary>
         /// 通过FormMain中ProcessGroupMsg调用，由传来的msg消息更新群组聊天窗口的richTextBox1
         /// </summary>
         /// <param name="msg"></param>
-        public void updatemsg(byte[] msg)
+        public void updateGroupChat(string msg)
         {
-            //MessageBox.Show("in updatemsg");
-            byte[] text = new byte[msg.Length];
-            for (int i = 0; i < msg.Length; i++)
-                text[i] = msg[i];
-
-            richTextBox1.AppendText(Encoding.Unicode.GetString(text, 0, text.Length) + Environment.NewLine);
+            richTextBox1.AppendText(msg + Environment.NewLine);
             richTextBox1.ScrollToCaret();
         }
 
@@ -81,17 +68,14 @@ namespace testClient
         {
             if (richTextBox2.Text != "") //输入框不空
             {
-                //输入框没有图片//////////////////////////////////////////////////////////////////////
                 {
-                    str = richTextBox2.Text;
-                    str = str.Insert(0, myname + " " + DateTime.Now.ToLongTimeString() + ":\n");
-                    b_mes = mes(str);//转化为字节数组
-                    all = new byte[b_mes.Length];
-                    Array.Copy(b_mes, all, b_mes.Length);
+                    string str = richTextBox2.Text; //实际聊天消息
+                    str = str.Insert(0, myname + " " + DateTime.Now.ToLongTimeString() + ":\n"); //添加我的昵称和时间信息
 
-                    string ALL = Encoding.Unicode.GetString(all, 0, all.Length);
-                    ALL = ALL.Insert(0, "[group][" + mynum + "," + groupid + "]"); //[group][101511,000001]Shane 18:29:39:\nhello
-                    myInfo.MsgReadyToBeSentToServer = ALL; //发送文本
+                    sendToServerMsg = str.Insert(0, "[group][" + myAccount + "," + groupid + "]"); //添加前缀组成实际的发送给服务器的消息
+
+                    myInfo.MsgReadyToBeSentToServer = sendToServerMsg; //发送文本
+
 
                     //将发送框内容显示到对话框中
                     richTextBox1.AppendText(myname + " " + DateTime.Now.ToLongTimeString() + ":\n" + richTextBox2.Text + Environment.NewLine);
@@ -100,8 +84,8 @@ namespace testClient
 
                 richTextBox2.Clear();
                 richTextBox2.Focus();
-                Array.Clear(b_mes, 0, b_mes.Length);
-                Array.Clear(all, 0, all.Length);
+
+                sendToServerMsg = string.Empty;
             }
         }
 

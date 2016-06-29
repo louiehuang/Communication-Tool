@@ -106,6 +106,11 @@ namespace testServer
         }
 
 
+        public bool BLL_Users_Register(string account, string name, string pwd, int header, string gender, string sign, int age, int constellation, int blood)
+        {
+            return DAL_users.DAL_Users_Register(account, name, pwd, header, gender, sign, age, constellation, blood);
+        }
+
 
 
     }

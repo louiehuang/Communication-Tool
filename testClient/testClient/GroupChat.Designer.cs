@@ -33,7 +33,6 @@
             this.pb_header = new System.Windows.Forms.PictureBox();
             this.skinbtn_send = new CCWin.SkinControl.SkinButton();
             this.label1 = new System.Windows.Forms.Label();
-            this.listBox1 = new System.Windows.Forms.ListBox();
             ((System.ComponentModel.ISupportInitialize)(this.pb_header)).BeginInit();
             this.SuspendLayout();
             // 
@@ -89,26 +88,16 @@
             this.label1.TabIndex = 4;
             this.label1.Text = "GroupName";
             // 
-            // listBox1
-            // 
-            this.listBox1.FormattingEnabled = true;
-            this.listBox1.ItemHeight = 12;
-            this.listBox1.Location = new System.Drawing.Point(456, 115);
-            this.listBox1.Name = "listBox1";
-            this.listBox1.Size = new System.Drawing.Size(139, 268);
-            this.listBox1.TabIndex = 5;
-            // 
             // GroupChat
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 12F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
             this.Back = global::testClient.Properties.Resources.main_2;
-            this.ClientSize = new System.Drawing.Size(613, 540);
+            this.ClientSize = new System.Drawing.Size(471, 544);
             this.CloseBoxSize = new System.Drawing.Size(30, 30);
             this.CloseDownBack = global::testClient.Properties.Resources.sysbtn_close_down;
             this.CloseMouseBack = global::testClient.Properties.Resources.sysbtn_close_hover;
             this.CloseNormlBack = global::testClient.Properties.Resources.sysbtn_close_normal;
-            this.Controls.Add(this.listBox1);
             this.Controls.Add(this.label1);
             this.Controls.Add(this.skinbtn_send);
             this.Controls.Add(this.pb_header);
@@ -139,6 +128,5 @@
         private System.Windows.Forms.PictureBox pb_header;
         private CCWin.SkinControl.SkinButton skinbtn_send;
         private System.Windows.Forms.Label label1;
-        private System.Windows.Forms.ListBox listBox1;
     }
 }

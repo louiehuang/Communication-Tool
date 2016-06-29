@@ -8,6 +8,7 @@ using System.Windows.Forms;
 using System.Data;
 using System.Text.RegularExpressions;
 using System.Threading;
+using System.Xml;
 
 namespace testServer
 {
@@ -24,11 +25,12 @@ namespace testServer
         public delegate void PersonalMsgEventHandler(string fromuser, string touser, string msg);//委托私聊消息发送操作
         public delegate void LoginEventHandler(string num1, string num2);//委托登陆操作
         public delegate void GroupMsgEventHandler(string fromuser, string groupnum, string msg);//委托群组消息发送操作
+        public delegate void RegisterEventHandler(string msg); //委托注册操作
 
         public static Hashtable OnlineUserTable = new Hashtable();//在线用户表,记录在线用户的账号(键)及其对象(值)
 
         //private string MyAllOnlineFriends = "";//当前用户的在线好友名单，之间用逗号分开
-        
+
 
         TcpClient user;
         NetworkStream networkStream;
@@ -36,14 +38,14 @@ namespace testServer
         private SplitMsg MsgHandler; //处理接收到的消息，按[e]分隔成多条
 
         byte[] buffer; //缓冲字节数组，接收和发送信息的缓冲区
-        public const int size = 8192; 
+        public const int size = 8192;
 
         //构造函数
         public ProcessUserRequest(TcpClient client)
         {
-            user = client; 
+            user = client;
             buffer = new byte[size];
-            MsgHandler = new SplitMsg(); 
+            MsgHandler = new SplitMsg();
 
             //获取网络流
             networkStream = user.GetStream();
@@ -72,7 +74,7 @@ namespace testServer
 
                 if (msgLength <= 0) //若出现传输字节为0时不做处理
                 {
-                    //
+                    //MessageBox.Show("msgLength is less than 0");
                 }
                 else
                 {
@@ -81,15 +83,16 @@ namespace testServer
                     Array.Clear(buffer, 0, buffer.Length);
 
                     //处理接收到的消息，按[e]分隔符分成多条
-                    MsgHandler.MSG = rawMsg; 
+                    MsgHandler.MSG = rawMsg;
                     string[] splittedMsg = MsgHandler.process();
 
                     //依次处理分隔后的每一条的消息
                     if (splittedMsg.Length != 0)
                     {
-                        foreach (string msg in splittedMsg) 
+                        foreach (string msg in splittedMsg)
                         {
-                            //MessageBox.Show(msg);
+                            //MessageBox.Show("Server: " + msg);
+
                             if (msg.StartsWith("[login]"))//登陆请求
                             {
                                 //eg:[login][101511,1111]
@@ -116,12 +119,12 @@ namespace testServer
                                 personalchatHandler.BeginInvoke(fromuser, touser, msg, null, null);
 
                             }
-                            else if(msg.StartsWith("[group]")) //群聊请求
+                            else if (msg.StartsWith("[group]")) //群聊请求
                             {
                                 //Shane向群组000001发送消息"hello"
                                 //则服务器收到msg = "[group][101511,000001]Shane 18:29:39:\nhello",
                                 //查询群组000001中的所有用户，向这些用户发送sendmsg = "[group][000001]Shane 18:29:39:\nhello"
-                                
+
                                 //获取群号
                                 string fromuser = msg.Substring(8, 6); //101511
                                 string groupid = msg.Substring(15, 6);//000001
@@ -131,7 +134,26 @@ namespace testServer
                                 GroupMsgEventHandler groupchatHandler = new GroupMsgEventHandler(StartGroupChat);
                                 groupchatHandler.BeginInvoke(fromuser, groupid, sendmsg, null, null);
 
-                            }//else if
+                            }
+                            else if (msg.StartsWith("[register]")) //注册账号请求
+                            {
+                                /*
+                                     [register]
+                                     <Register>
+                                         <Info name="Shane" pwd="1111" gender="男" sign="西城主唱" age="21" constellation="射手座" blood="A型"></Info>
+                                     </Register> 
+                                 */
+
+                                string temp = msg.Substring(10); //去掉前缀
+                                //MessageBox.Show(temp);
+
+                                /*更新窗体，载入好友和群组列表**/
+                                RegisterEventHandler handleRegister = new RegisterEventHandler(LoadMyInfo);
+                                handleRegister.BeginInvoke(temp, null, null);
+
+
+
+                            }
                         }//foreach
                     }//if
 
@@ -145,7 +167,7 @@ namespace testServer
             catch (Exception ex)
             {
                 //MessageBox.Show("异常——" + ex.Message);
-                
+
                 OnlineUserTable.Remove(this.MyAccount);//在线用户表中删除当前用户
             }
         }
@@ -255,7 +277,7 @@ namespace testServer
         public void StartLogin(string account, string pwd)//登陆判断
         {
             //查询用户登录请求是否被允许，若允许则继续处理
-            if(BLL_user.BLL_Users_LoginPermission(account,pwd) == true)
+            if (BLL_user.BLL_Users_LoginPermission(account, pwd) == true)
             {
                 OnlineUserTable.Add(account, this); //当前用户加入在线用户表
 
@@ -317,21 +339,21 @@ namespace testServer
             MyGroupList = build.GetUserGroupsXml();  //获取当前用户的群组表，xml形式字符串
             string result = "<Info>" + MyInfo + MyFriendList + MyGroupList + "</Info>";
 
-              /*
-             * <Info>
-             *          <myInfo>
-             *                  <me account="101511" name="Shane" header="19" signature="西城主唱"></me>
-             *          </myInfo>
-             *          <friends>
-             *                  <frienditem account="253841" name="Bryan" header="1"></frienditem>
-             *                  <frienditem account="100001" name="Alice" header="2"></frienditem>
-             *          </friend>
-             *          <groups>
-             *                  <groupitem num="000001" name="DataBase" header="1"></groupitem>
-             *                  <groupitem num="000002" name="C#" header="2"></groupitem>
-             *          </groups>
-             * </Info>
-             */
+            /*
+           * <Info>
+           *          <myInfo>
+           *                  <me account="101511" name="Shane" header="19" signature="西城主唱"></me>
+           *          </myInfo>
+           *          <friends>
+           *                  <frienditem account="253841" name="Bryan" header="1"></frienditem>
+           *                  <frienditem account="100001" name="Alice" header="2"></frienditem>
+           *          </friend>
+           *          <groups>
+           *                  <groupitem num="000001" name="DataBase" header="1"></groupitem>
+           *                  <groupitem num="000002" name="C#" header="2"></groupitem>
+           *          </groups>
+           * </Info>
+           */
 
             return result;
 
@@ -397,6 +419,65 @@ namespace testServer
                 }
             }
         }
+
+        public void LoadMyInfo(string msg)
+        {
+            /*
+                <Register>
+                    <Info name="Shane" pwd="1111" header=\"1\" gender="男" sign="西城主唱" age="21" constellation="12" blood="1"></Info>
+                </Register> 
+            */
+
+            //MessageBox.Show("Load: " + msg);
+            XmlDocument doc = new XmlDocument();
+            doc.LoadXml(msg);
+            string account = string.Empty;
+            string name = string.Empty;
+            string pwd = string.Empty;
+            int header = 1;
+            string gender = string.Empty;
+            string sign = string.Empty;
+            int age = 0;
+            int constellation = 0;
+            int blood = 0;
+
+            Random random = new Random();
+            account = random.Next(100000,1000000).ToString(); //随机生成6位数的账号
+
+            //遍历根节点<Info></Info>的所有子节点
+            XmlNodeList xmlnodeList = doc.SelectSingleNode("Register").ChildNodes;
+            foreach (XmlNode child in xmlnodeList)
+            {
+                if (child.Name == "Info") //个人信息
+                {
+                        name = child.Attributes["name"].Value;
+                        pwd = child.Attributes["pwd"].Value;
+                        header = Convert.ToInt32(child.Attributes["header"].Value);
+                        gender = child.Attributes["gender"].Value;
+                        sign = child.Attributes["sign"].Value;
+                        age = Convert.ToInt32(child.Attributes["age"].Value);
+                        constellation =  Convert.ToInt32(child.Attributes["constellation"].Value);
+                        blood =  Convert.ToInt32(child.Attributes["blood"].Value);
+                }
+
+                MessageBox.Show(name + " " + pwd + " " + header + " " + gender + " " + sign + " " + age + " " + constellation + " " + blood);
+
+            }
+
+            bool flag = BLL_user.BLL_Users_Register(account, name, pwd, header, gender, sign, age, constellation, blood);
+
+            if (flag == true)
+            {
+                MessageBox.Show("account: " + account);
+                //发送回账号
+            }
+            else
+            { 
+                //发送回注册失败
+            }
+
+        }
+
 
 
     }
