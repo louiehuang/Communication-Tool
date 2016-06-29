@@ -83,6 +83,7 @@
     <Compile Include="GroupChat.Designer.cs">
       <DependentUpon>GroupChat.cs</DependentUpon>
     </Compile>
+    <Compile Include="IpConfig.cs" />
     <Compile Include="SplitMsg.cs" />
     <Compile Include="myInfo.cs" />
     <Compile Include="Program.cs" />
@@ -287,6 +288,9 @@
   </ItemGroup>
   <ItemGroup>
     <None Include="Resources\btnSearch.png" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="bin\Debug\image\5.jpg" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 

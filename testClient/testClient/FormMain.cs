@@ -27,21 +27,21 @@ namespace testClient
         byte[] buffer; //缓存接收到和要发送的信息
         int size = 8192;
 
+        /*消息处理*/
         private SplitMsg MsgHandler;//处理收到的字符
-        public delegate void updataMain(string msg);
         public Hashtable UserMsg = new Hashtable();
 
-        static int ballonMsgNum = 0; 
-        private delegate void Showicon(int i);
-        private bool ShowIcon;
-        /// <summary>
-        /// 1、2切换，实现托盘气球闪烁
-        /// </summary>
-        private int IconMode;
+        /*托盘气球*/
+        static int ballonMsgNum = 0;
+        private delegate void BallonFilckerHandle(int num);
+        private bool BallonImageFlag; //气球图像切换标记，不断置true和false
+        private int BallonImage;// 1、2切换，实现托盘气球闪烁
 
+        /*委托*/
         public delegate void PersonalMsgEventHandler(string fromuser, string mymsg);//委托私聊消息发送操作
         public delegate void LoginEventHandler(string msg);//委托登陆操作
         public delegate void GroupMsgEventHandler(string groupnum, string msg);//委托群组消息发送操作
+        public delegate void UpdateChatFormHandler(string msg); //委托更新聊天窗口(私聊和群组)信息操作
 
         static AutoResetEvent myResetEvent = new AutoResetEvent(false);
 
@@ -57,12 +57,14 @@ namespace testClient
         /// <param name="e"></param>
         private void FormMain_Load(object sender, EventArgs e)
         {
+            int ScreenWidth = Screen.PrimaryScreen.WorkingArea.Width;
+            this.Left = ScreenWidth - 310;
+            this.Top = 85;
             MsgHandler = new SplitMsg();
 
             /*与服务器连接*/
-            IPAddress Ip = IPAddress.Parse("127.0.0.1");
-            int Port = 2333;
-            IPEndPoint EndPoint = new IPEndPoint(Ip, Port);
+
+            IPEndPoint EndPoint = new IPEndPoint(IpConfig.getIpv4(), IpConfig.Port);
             myclient = new TcpClient();
             myclient.Connect(EndPoint);
 
@@ -226,16 +228,16 @@ namespace testClient
                         foreach (string leftmsg in ClassfiedMsgList)
                         {
                             string fromuser = leftmsg.Substring(7, 6); //发送者id
-                            
+
                             MessageBox.Show(fromuser); //去掉怎么头像显示不正确了，时间问题？
-                            
+
                             string mymsg = leftmsg.Substring(14); //msg
                             //mymsg = "Shane 22:59:03:\nhello\nShane 22:59:42:\nFromShane\n"
                             this.ProcessPersonalMsg(fromuser, mymsg);
                         }
 
 
-                    } 
+                    }
                     else //不是离线消息
                     {
                         //按[e]切分消息
@@ -275,7 +277,7 @@ namespace testClient
                                 }
                                 else if (msg.StartsWith("login_failed")) //登陆失败
                                 {
-                                    
+
                                 }
                                 else if (msg.StartsWith("[talk]")) //私聊会话请求
                                 {
@@ -366,7 +368,7 @@ namespace testClient
             {
                 //离线消息: mymsg = "Shane 12:44:50:\nhello\nShane 12:45:08:\nHi[e][talk][100001]\nShane\n12:46:00:\nFromShaneAgain\n"
                 //balloon = "[msg]101511,Shane,5,Shane 12:44:50:\nhello\nShane 12:45:08:\nHi[e][talk][100001]\nShane\n12:46:00:\nFromShaneAgain\n"
-                
+
                 string balloon = string.Empty; //每次的气球消息
 
                 if (ballontime == 0) //第一次时加前缀，之后只处理消息本身
@@ -380,15 +382,14 @@ namespace testClient
                     ballontime = 1;
                 }
 
-                this.BeginInvoke(new Showicon(startBallonTimer), new object[] { 6 }); //委托，托盘图标闪烁
+                this.BeginInvoke(new BallonFilckerHandle(startBallonTimer), new object[] { 6 }); //委托，托盘图标闪烁
 
-
-                updataMain handler = new updataMain(ProcessBallonMsg);
+                UpdateChatFormHandler handler = new UpdateChatFormHandler(ProcessBallonMsg);
                 handler.BeginInvoke(balloon, null, null);
                 ballonMsgNum++;
 
             }
-            
+
         }
 
         /// <summary>
@@ -409,9 +410,9 @@ namespace testClient
             //遍历clb_friend，获取groupnum的名称和头像索引
             for (int i = 0; i < 1; i++)
             {
-                for (int j = 0; j <  clb_group.Items[i].SubItems.Count; j++)
+                for (int j = 0; j < clb_group.Items[i].SubItems.Count; j++)
                 {
-                    if (clb_group.Items[i].SubItems[j].Tag.ToString() == groupnum) 
+                    if (clb_group.Items[i].SubItems[j].Tag.ToString() == groupnum)
                     {
                         group_name = clb_group.Items[i].SubItems[j].NicName;
                         group_header = (int)clb_group.Items[i].SubItems[j].ID;
@@ -450,13 +451,13 @@ namespace testClient
                     ballontime = 1;
                 }
 
-                this.BeginInvoke(new Showicon(startBallonTimer), new object[] { 6 }); //委托，托盘图标闪烁
+                this.BeginInvoke(new BallonFilckerHandle(startBallonTimer), new object[] { 6 }); //委托，托盘图标闪烁
 
-                updataMain handler = new updataMain(ProcessBallonMsg);
+                UpdateChatFormHandler handler = new UpdateChatFormHandler(ProcessBallonMsg);
                 handler.BeginInvoke(balloon, null, null);
                 ballonMsgNum++;
             }
-        
+
         }
 
 
@@ -471,9 +472,9 @@ namespace testClient
 
             //MessageBox.Show("ballon:\n " + ballonMsg);
 
-            this.BeginInvoke(new updataMain(ShowFormChat), new object[] { ballonMsg });
+            this.BeginInvoke(new UpdateChatFormHandler(ShowFormChat), new object[] { ballonMsg });
 
-            ballonMsgNum--; 
+            ballonMsgNum--;
         }
 
 
@@ -520,43 +521,43 @@ namespace testClient
                 GroupChat groupchat = new GroupChat(this.pictureBox1.Tag.ToString(), splitInfo[0], label1.Text, splitInfo[1], int.Parse(splitInfo[2]));
                 groupchat.Show();
                 groupchat.BeginInvoke(new UpdateGroupChat(groupchat.updateGroupChat), splitInfo[3]);
-                
+
             }
 
             //显示聊天窗体后清空气球消息和重置第一次气球消息标志
-            ballonMsg = string.Empty; 
+            ballonMsg = string.Empty;
             ballontime = 0;
 
         }
 
 
-        /*startBallonTimer, timer2_Tick, ShowIconMode三个方法实现在托盘的图标闪烁*/
+        /*startBallonTimer, timer2_Tick, SwitchIconImage三个方法实现在托盘的图标闪烁*/
         /// <summary>开始timer2，闪烁气球图标</summary>
         /// <param name="i"></param>
         public void startBallonTimer(int i)
         {
             if (this.timer2.Enabled)
             {
-                IconMode = i;
+                BallonImage = i;
             }
             else
             {
-                IconMode = i;
+                BallonImage = i;
                 timer2.Start();
             }
         }
 
         private void timer2_Tick(object sender, EventArgs e)
         {
-            // 通过ShowIcon的切换来实现图标(两个，一大一小)闪烁效果
-            if (ShowIcon)
+            // 通过BallonImageFlag的切换来实现图标(两个，一大一小)闪烁效果
+            if (BallonImageFlag)
             {
-                ShowIcon = false;
+                BallonImageFlag = false;
                 this.SwitchIconImage(1);
             }
             else
             {
-                ShowIcon = true;
+                BallonImageFlag = true;
                 this.SwitchIconImage(2);
             }
 
@@ -566,15 +567,15 @@ namespace testClient
         /// 切换气球图像实现闪烁
         /// </summary>
         /// <param name="ShowMode"></param>
-        private void SwitchIconImage(int ShowMode)
+        private void SwitchIconImage(int num)
         {
-            switch (ShowMode)
+            switch (num)
             {
                 case 1://消息闪动图像1
-                    this.notifyIcon1.Icon = Icon.ExtractAssociatedIcon(Application.StartupPath + "\\myico\\Message_up.ico");
+                    this.notifyIcon1.Icon = Icon.ExtractAssociatedIcon(Application.StartupPath + "\\image\\Message_up.ico");
                     break;
                 case 2://消息闪动图像2
-                    this.notifyIcon1.Icon = Icon.ExtractAssociatedIcon(Application.StartupPath + "\\myico\\Message_down.ico");
+                    this.notifyIcon1.Icon = Icon.ExtractAssociatedIcon(Application.StartupPath + "\\image\\Message_down.ico");
                     break;
             }
         }
@@ -593,7 +594,7 @@ namespace testClient
             // Tag 为对方账号
             //string num = sideBar1.SeletedItem.Tag.ToString();
             //MessageBox.Show(num);
-            if (es.Button == MouseButtons.Right) 
+            if (es.Button == MouseButtons.Right)
             {
                 return;
             }
@@ -740,7 +741,7 @@ namespace testClient
                     }
 
                 }
-               else if (SuperirNode.Name == "friends") //好友信息
+                else if (SuperirNode.Name == "friends") //好友信息
                 {
 
                     clb_friend.Items[0].SubItems.Clear();
@@ -749,7 +750,7 @@ namespace testClient
                     {
                         //<frienditem account="253841" name="Bryan" img="1"></frienditem> 
                         //<frienditem account="100001" name="Alice" img="2"></frienditem>
-                        
+
                         string account = child.Attributes["account"].Value; //获取好友账号
                         string name = child.Attributes["name"].Value; //获取好友昵称
                         int imageindex = int.Parse(child.Attributes["header"].Value); //获取好友头像编号索引
@@ -760,7 +761,7 @@ namespace testClient
                         subitems.HeadImage = imageList1.Images[imageindex]; //HeadImage直接根据imageList1加载头像
 
                         subitems.ID = (uint)imageindex; //ID记录头像索引,用于clb_friend_DoubleClickSubItem中构建聊天窗口
-                       
+
                         clb_friend.Items[0].SubItems.Add(subitems);
 
                     }
@@ -773,7 +774,7 @@ namespace testClient
                     foreach (XmlNode child in SuperirNode.ChildNodes)
                     {
                         //<groupitem num="000001" name="DataBase" header="1"></groupitem>
-                       // <groupitem num="000002" name="C#" header="2"></groupitem>
+                        // <groupitem num="000002" name="C#" header="2"></groupitem>
                         string num = child.Attributes["num"].Value;
                         int imageindex = int.Parse(child.Attributes["header"].Value); //头像编号索引
 
@@ -787,7 +788,7 @@ namespace testClient
                         clb_group.Items[0].SubItems.Add(subitems);
 
                     }
-                    
+
                 }
 
             }

@@ -112,6 +112,7 @@
             this.MiniNormlBack = global::testClient.Properties.Resources.sysbtn_min_normal;
             this.MiniSize = new System.Drawing.Size(30, 30);
             this.Name = "GroupChat";
+            this.StartPosition = System.Windows.Forms.FormStartPosition.CenterScreen;
             this.Text = "GroupChat";
             this.FormClosing += new System.Windows.Forms.FormClosingEventHandler(this.GroupChat_FormClosing);
             this.Load += new System.EventHandler(this.GroupChat_Load);

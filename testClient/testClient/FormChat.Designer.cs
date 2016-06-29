@@ -121,6 +121,7 @@
             this.Name = "FormChat";
             this.RestoreNormlBack = global::testClient.Properties.Resources.sysbtn_restore_normal;
             this.ShowIcon = false;
+            this.StartPosition = System.Windows.Forms.FormStartPosition.CenterScreen;
             this.Text = "聊天窗口";
             this.FormClosing += new System.Windows.Forms.FormClosingEventHandler(this.FormChat_FormClosing);
             this.Load += new System.EventHandler(this.FormChat_Load);

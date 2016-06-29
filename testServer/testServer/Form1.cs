@@ -19,14 +19,11 @@ namespace testServer
             InitializeComponent();
         }
 
-        public static IPAddress Ip=IPAddress .Parse ("127.0.0.1");
-        //public static IPAddress Ip = IPAddress.Parse("10.146.93.17");
-        public static int Port=2333;
-        public static IPEndPoint EndPoint = new IPEndPoint(Ip, Port);
+        public static IPEndPoint EndPoint = new IPEndPoint(IpConfig.getIpv4(), IpConfig.Port);
 
         TcpListener myListener = new TcpListener(EndPoint);
         Thread myThread;
-        bool isend;
+        bool finish;
 
         public static ManualResetEvent allDone = new ManualResetEvent(false);
 
@@ -37,10 +34,19 @@ namespace testServer
         /// <param name="e"></param>
         private void button1_Click(object sender, EventArgs e)
         {
+            //string res = string.Empty;
+            //IPHostEntry hostInfo = Dns.GetHostEntry(Dns.GetHostName());
+            //foreach (IPAddress ipadd in hostInfo.AddressList)
+            //{
+            //    res += ipadd.ToString() + "\r\n";
+            //}
+            //MessageBox.Show(res);
+            //MessageBox.Show(IpConfig.getIpv4().ToString());
+
             myListener = new TcpListener(EndPoint); 
             myListener.Start();
 
-            isend = false;
+            finish = false;
             myThread = new Thread(new ThreadStart(StartListen));
             myThread.Start();
 
@@ -56,7 +62,7 @@ namespace testServer
         public void StartListen()
         {
             //轮询接受客户端请求
-            while (true && !isend)
+            while (true && !finish)
             {
                 allDone.Set();
                 ProcessUserRequest client = new ProcessUserRequest(myListener.AcceptTcpClient());

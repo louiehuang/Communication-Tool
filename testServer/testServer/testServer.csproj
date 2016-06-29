@@ -46,6 +46,7 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="IpConfig.cs" />
     <Compile Include="L_Groups\BLL_Groups.cs" />
     <Compile Include="L_Groups\DAL_Groups.cs" />
     <Compile Include="L_Groups\Model_Groups.cs" />

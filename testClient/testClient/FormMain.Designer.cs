@@ -330,6 +330,7 @@
             this.MiniSize = new System.Drawing.Size(30, 30);
             this.Name = "FormMain";
             this.ShowDrawIcon = false;
+            this.StartPosition = System.Windows.Forms.FormStartPosition.Manual;
             this.Text = "";
             this.Load += new System.EventHandler(this.FormMain_Load);
             ((System.ComponentModel.ISupportInitialize)(this.pictureBox1)).EndInit();

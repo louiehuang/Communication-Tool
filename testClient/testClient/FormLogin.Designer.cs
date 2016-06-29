@@ -173,6 +173,7 @@
             this.Name = "FormLogin";
             this.ShowBorder = false;
             this.ShowDrawIcon = false;
+            this.StartPosition = System.Windows.Forms.FormStartPosition.CenterScreen;
             this.Text = "Chat";
             this.TopMost = true;
             this.Load += new System.EventHandler(this.FormLogin_Load);

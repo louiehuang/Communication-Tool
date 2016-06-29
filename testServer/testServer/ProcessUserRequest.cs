@@ -460,7 +460,7 @@ namespace testServer
                         blood =  Convert.ToInt32(child.Attributes["blood"].Value);
                 }
 
-                MessageBox.Show(name + " " + pwd + " " + header + " " + gender + " " + sign + " " + age + " " + constellation + " " + blood);
+                //MessageBox.Show(name + " " + pwd + " " + header + " " + gender + " " + sign + " " + age + " " + constellation + " " + blood);
 
             }
 
@@ -468,7 +468,8 @@ namespace testServer
 
             if (flag == true)
             {
-                MessageBox.Show("account: " + account);
+                //MessageBox.Show("account: " + account);
+                SendMsg("[Account]" + account);
                 //发送回账号
             }
             else

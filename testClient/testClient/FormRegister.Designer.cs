@@ -31,7 +31,6 @@
             this.label1 = new System.Windows.Forms.Label();
             this.label2 = new System.Windows.Forms.Label();
             this.label3 = new System.Windows.Forms.Label();
-            this.pictureBox1 = new System.Windows.Forms.PictureBox();
             this.tb_name = new System.Windows.Forms.TextBox();
             this.tb_pwd = new System.Windows.Forms.TextBox();
             this.tb_pwd_confirm = new System.Windows.Forms.TextBox();
@@ -49,6 +48,12 @@
             this.btn_send = new CCWin.SkinControl.SkinButton();
             this.btn_select = new CCWin.SkinControl.SkinButton();
             this.btn_reset = new CCWin.SkinControl.SkinButton();
+            this.pictureBox1 = new System.Windows.Forms.PictureBox();
+            this.label9 = new System.Windows.Forms.Label();
+            this.label10 = new System.Windows.Forms.Label();
+            this.label11 = new System.Windows.Forms.Label();
+            this.label12 = new System.Windows.Forms.Label();
+            this.label13 = new System.Windows.Forms.Label();
             ((System.ComponentModel.ISupportInitialize)(this.pictureBox1)).BeginInit();
             this.SuspendLayout();
             // 
@@ -81,14 +86,6 @@
             this.label3.Size = new System.Drawing.Size(79, 20);
             this.label3.TabIndex = 2;
             this.label3.Text = "确认密码：";
-            // 
-            // pictureBox1
-            // 
-            this.pictureBox1.Location = new System.Drawing.Point(278, 67);
-            this.pictureBox1.Name = "pictureBox1";
-            this.pictureBox1.Size = new System.Drawing.Size(80, 80);
-            this.pictureBox1.TabIndex = 3;
-            this.pictureBox1.TabStop = false;
             // 
             // tb_name
             // 
@@ -147,7 +144,7 @@
             // 
             this.label5.AutoSize = true;
             this.label5.Font = new System.Drawing.Font("微软雅黑", 10F);
-            this.label5.Location = new System.Drawing.Point(45, 235);
+            this.label5.Location = new System.Drawing.Point(45, 278);
             this.label5.Name = "label5";
             this.label5.Size = new System.Drawing.Size(51, 20);
             this.label5.TabIndex = 10;
@@ -157,7 +154,7 @@
             // 
             this.label6.AutoSize = true;
             this.label6.Font = new System.Drawing.Font("微软雅黑", 10F);
-            this.label6.Location = new System.Drawing.Point(45, 277);
+            this.label6.Location = new System.Drawing.Point(45, 235);
             this.label6.Name = "label6";
             this.label6.Size = new System.Drawing.Size(51, 20);
             this.label6.TabIndex = 11;
@@ -185,21 +182,34 @@
             // 
             // tb_sign
             // 
-            this.tb_sign.Location = new System.Drawing.Point(119, 237);
+            this.tb_sign.Location = new System.Drawing.Point(119, 280);
             this.tb_sign.Name = "tb_sign";
             this.tb_sign.Size = new System.Drawing.Size(239, 21);
             this.tb_sign.TabIndex = 14;
             // 
             // tb_age
             // 
-            this.tb_age.Location = new System.Drawing.Point(119, 279);
+            this.tb_age.Location = new System.Drawing.Point(119, 237);
             this.tb_age.Name = "tb_age";
-            this.tb_age.Size = new System.Drawing.Size(100, 21);
+            this.tb_age.Size = new System.Drawing.Size(111, 21);
             this.tb_age.TabIndex = 15;
             // 
             // cb_con
             // 
             this.cb_con.FormattingEnabled = true;
+            this.cb_con.Items.AddRange(new object[] {
+            "水瓶座",
+            "双鱼座",
+            "白羊座",
+            "金牛座",
+            "双子座",
+            "巨蟹座",
+            "狮子座",
+            "处女座",
+            "天秤座",
+            "天蝎座",
+            "射手座",
+            "摩羯座"});
             this.cb_con.Location = new System.Drawing.Point(119, 322);
             this.cb_con.Name = "cb_con";
             this.cb_con.Size = new System.Drawing.Size(121, 20);
@@ -208,6 +218,11 @@
             // cb_blood
             // 
             this.cb_blood.FormattingEnabled = true;
+            this.cb_blood.Items.AddRange(new object[] {
+            "A型",
+            "B型",
+            "AB型",
+            "O型"});
             this.cb_blood.Location = new System.Drawing.Point(119, 360);
             this.cb_blood.Name = "cb_blood";
             this.cb_blood.Size = new System.Drawing.Size(121, 20);
@@ -260,12 +275,75 @@
             this.btn_reset.UseVisualStyleBackColor = false;
             this.btn_reset.Click += new System.EventHandler(this.btn_reset_Click);
             // 
+            // pictureBox1
+            // 
+            this.pictureBox1.Image = global::testClient.Properties.Resources._5;
+            this.pictureBox1.Location = new System.Drawing.Point(278, 67);
+            this.pictureBox1.Name = "pictureBox1";
+            this.pictureBox1.Size = new System.Drawing.Size(80, 80);
+            this.pictureBox1.TabIndex = 3;
+            this.pictureBox1.TabStop = false;
+            // 
+            // label9
+            // 
+            this.label9.AutoSize = true;
+            this.label9.Location = new System.Drawing.Point(232, 74);
+            this.label9.Name = "label9";
+            this.label9.Size = new System.Drawing.Size(11, 12);
+            this.label9.TabIndex = 21;
+            this.label9.Text = "*";
+            // 
+            // label10
+            // 
+            this.label10.AutoSize = true;
+            this.label10.Location = new System.Drawing.Point(231, 117);
+            this.label10.Name = "label10";
+            this.label10.Size = new System.Drawing.Size(11, 12);
+            this.label10.TabIndex = 22;
+            this.label10.Text = "*";
+            // 
+            // label11
+            // 
+            this.label11.AutoSize = true;
+            this.label11.Location = new System.Drawing.Point(231, 158);
+            this.label11.Name = "label11";
+            this.label11.Size = new System.Drawing.Size(11, 12);
+            this.label11.TabIndex = 23;
+            this.label11.Text = "*";
+            // 
+            // label12
+            // 
+            this.label12.AutoSize = true;
+            this.label12.Location = new System.Drawing.Point(230, 198);
+            this.label12.Name = "label12";
+            this.label12.Size = new System.Drawing.Size(11, 12);
+            this.label12.TabIndex = 24;
+            this.label12.Text = "*";
+            // 
+            // label13
+            // 
+            this.label13.AutoSize = true;
+            this.label13.Location = new System.Drawing.Point(230, 240);
+            this.label13.Name = "label13";
+            this.label13.Size = new System.Drawing.Size(11, 12);
+            this.label13.TabIndex = 25;
+            this.label13.Text = "*";
+            // 
             // FormRegister
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 12F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
             this.BackColor = System.Drawing.Color.FromArgb(((int)(((byte)(80)))), ((int)(((byte)(158)))), ((int)(((byte)(225)))));
-            this.ClientSize = new System.Drawing.Size(404, 477);
+            this.ClientSize = new System.Drawing.Size(384, 500);
+            this.CloseBoxSize = new System.Drawing.Size(30, 30);
+            this.CloseDownBack = global::testClient.Properties.Resources.sysbtn_close_down;
+            this.CloseMouseBack = global::testClient.Properties.Resources.sysbtn_close_hover;
+            this.CloseNormlBack = global::testClient.Properties.Resources.sysbtn_close_normal;
+            this.Controls.Add(this.label13);
+            this.Controls.Add(this.label12);
+            this.Controls.Add(this.label11);
+            this.Controls.Add(this.label10);
+            this.Controls.Add(this.label9);
             this.Controls.Add(this.btn_reset);
             this.Controls.Add(this.btn_select);
             this.Controls.Add(this.btn_send);
@@ -287,8 +365,18 @@
             this.Controls.Add(this.label3);
             this.Controls.Add(this.label2);
             this.Controls.Add(this.label1);
+            this.MaxDownBack = global::testClient.Properties.Resources.sysbtn_max_down;
+            this.MaxMouseBack = global::testClient.Properties.Resources.sysbtn_max_hover;
+            this.MaxNormlBack = global::testClient.Properties.Resources.sysbtn_max_normal;
+            this.MaxSize = new System.Drawing.Size(30, 30);
+            this.MiniDownBack = global::testClient.Properties.Resources.sysbtn_min_down;
+            this.MiniMouseBack = global::testClient.Properties.Resources.sysbtn_min_hover;
+            this.MiniNormlBack = global::testClient.Properties.Resources.sysbtn_min_normal;
+            this.MiniSize = new System.Drawing.Size(30, 30);
             this.Name = "FormRegister";
-            this.Text = "FormRegister";
+            this.StartPosition = System.Windows.Forms.FormStartPosition.CenterScreen;
+            this.Text = "用户注册";
+            this.TopMost = true;
             this.Load += new System.EventHandler(this.FormRegister_Load);
             ((System.ComponentModel.ISupportInitialize)(this.pictureBox1)).EndInit();
             this.ResumeLayout(false);
@@ -319,5 +407,10 @@
         private CCWin.SkinControl.SkinButton btn_send;
         private CCWin.SkinControl.SkinButton btn_select;
         private CCWin.SkinControl.SkinButton btn_reset;
+        private System.Windows.Forms.Label label9;
+        private System.Windows.Forms.Label label10;
+        private System.Windows.Forms.Label label11;
+        private System.Windows.Forms.Label label12;
+        private System.Windows.Forms.Label label13;
     }
 }
